@@ -116,16 +116,6 @@ FREE is the written duration used for durationType."
          :continue)
         (t nil)))
 
-(defun previous-mscx-dur (self)
-  (let ((prev (om::previous-container self '(om::chord))))
-    (when prev
-      (let ((mesure (mxml::get-parent-measure prev))
-            (obj prev))
-        ;; same written-duration logic as in cons-mscx-expr measure/chord path
-        ;; fallback version first:
-        (/ (om::extent prev) (* (om::qvalue prev) 4))))))
-
-
 (defun same-measure-p (a b)
   (and a b
        (eq (mxml::get-parent-measure a)
