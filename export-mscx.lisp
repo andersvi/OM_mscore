@@ -2,11 +2,22 @@
 ;;; MSCX HELPERS (HACK V1)
 ;;;========================
 
-(in-package :om)
+;;
+;;
+;; using parts from OMs export-mxml.lisp
+;;
 
-;;;========================
-;;; MSCX HELPERS (HACK V1)
-;;;========================
+(defpackage "mscx" 
+  (:use "COMMON-LISP")
+  (:use "MusicXML")
+  (:use :om)
+  (:nicknames "mscx"))
+
+(in-package "mscx")
+
+(pushnew :mscx *features*)
+
+(defvar *xml-version* "XML 1.0")
 
 (defun mscx-header ()
   (list "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
@@ -35,11 +46,11 @@
       14))
 
 (defun om-midic-to-midi (midic)
-  "OM midic is usually cents-like, e.g. 6000 -> midi 60."
+  "e.g. 6000 -> midi 60."
   (round (/ midic 100)))
 
 (defun xml-head-to-mscx-duration-type (note-head)
-  "Current *note-types* gives MusicXML type names. For this hack we reuse them."
+  "Current mxml::*note-types* gives MusicXML type names. For this hack we reuse them."
   note-head)
 
 (defun clef-sign->mscx-clef (sign)
@@ -189,7 +200,6 @@ FREE is the written duration used for durationType."
              (mscx-prev-location self free)
              "</prev>"
              "</Spanner>"))
-
       (:continue
        (append
         (list "<Spanner type=\"Tie\">"
@@ -203,12 +213,10 @@ FREE is the written duration used for durationType."
               (mscx-next-location self free)
               "</next>"
               "</Spanner>")))
-
       (otherwise nil))))
 
-
 ;;
-;; various methods for #'cons-mscx-expr for various OM classes
+;; main methods for #'cons-mscx-expr for relevant OM classes
 ;;
 
 (defgeneric cons-mscx-expr (self &key free key approx part))
@@ -414,24 +422,21 @@ FREE is the written duration used for durationType."
      "</museScore>")))
 
 
-;; OM side wrappers
-
-
-;; main MSCX FILE OUTPUT
-
+;; MAIN MSCX FILE OUTPUT
 
 (defun write-mscx-file (list path)
-  (WITH-OPEN-FILE (out path :direction :output
+  (with-open-file (out path :direction :output
                        :if-does-not-exist :create :if-exists :supersede)
     (loop for line in (mscx-header) do (format out "~A~%" line))
     (om::recursive-write-xml out list -1)))
 
 (defmethod mscx-export ((self t) &key keys approx path name) nil)
 
-(defmethod mscx-export ((self voice) &key keys approx path name)
+(defmethod mscx-export ((self om::voice) &key keys approx path name)
   (mscx-export (make-instance 'poly :voices self)
                :keys keys :approx approx :path path :name name))
 
+;; OM side wrappers
 
 (defmethod! export-mscx ((self t) &optional (keys nil) (approx 2) (path nil))
   :icon 351
