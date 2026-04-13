@@ -362,6 +362,28 @@ FREE is the written duration used for durationType."
          (values rep (+ depth 1)))))))
 
 
+;;;
+;;; TIME SIGNATURES
+;;;
+;;; only emit upon changes for now
+;;;
+
+(defun measure-signature (measure)
+  (car (om::tree measure)))
+
+(defun previous-measure (measure)
+  (om::previous-container measure '(om::measure)))
+
+(defun same-signature-p (a b)
+  (equal (measure-signature a)
+         (measure-signature b)))
+
+(defun emit-timesig-p (measure mesnum)
+  (or (= mesnum 1)
+      (let ((prev (previous-measure measure)))
+        (or (null prev)
+            (not (same-signature-p measure prev))))))
+
 (defmethod cons-mscx-expr ((self om::measure) &key free (key '(G 2)) (approx 2) part)
   (let* ((mesnum free)
          (inside (om::inside self))
@@ -372,17 +394,17 @@ FREE is the written duration used for durationType."
     (list
      "<Measure>"
      "<voice>"
-
-     (when (= mesnum 1)
-       (remove nil
-               (list
+     (remove nil
+             (list
+              (when (= mesnum 1)
                 (and key
                      (list "<Clef>"
                            (format nil "<concertClefType>~A</concertClefType>"
                                    (clef-sign->mscx-clef (car key)))
                            (format nil "<transposingClefType>~A</transposingClefType>"
                                    (clef-sign->mscx-clef (car key)))
-                           "</Clef>"))
+                           "</Clef>")))
+              (when (emit-timesig-p self mesnum)
                 (list "<TimeSig>"
                       (format nil "<sigN>~D</sigN>" (car signature))
                       (format nil "<sigD>~D</sigD>" (cadr signature))
