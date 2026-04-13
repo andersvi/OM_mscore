@@ -218,11 +218,11 @@ FREE is the written duration used for durationType."
          (nbpoints (cadr head-and-pts))
          (inside (om::inside self)))
     (append
-     (list "<Chord>"
-           (format nil "<durationType>~A</durationType>"
-                   (xml-head-to-mscx-duration-type note-head)))
+     ;; take care to emit correct list order, which decides semantics in output
+     (list "<Chord>")
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
+     (list (format nil "<durationType>~A</durationType>" (xml-head-to-mscx-duration-type note-head)))
      (loop for note in inside
            append
            (let* ((note-values (mxml::mc->xmlvalues (om::midic note) approx))
@@ -254,11 +254,11 @@ FREE is the written duration used for durationType."
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
          (nbpoints (cadr head-and-pts)))
     (append
-     (list "<Rest>"
-           (format nil "<durationType>~A</durationType>"
-                   (xml-head-to-mscx-duration-type note-head)))
+     (list "<Rest>")
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
+     (list (format nil "<durationType>~A</durationType>"
+                   (xml-head-to-mscx-duration-type note-head)))
      (list "</Rest>"))))
 
 (defmethod cons-mscx-expr ((self om::group) &key free key (approx 2) part)
