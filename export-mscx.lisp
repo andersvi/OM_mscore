@@ -205,6 +205,44 @@ FREE is the written duration used for durationType."
               "</Spanner>")))
       (otherwise nil))))
 
+(defun mscx-beam-mode (self)
+  (let* ((beamself (mxml::donne-figure self))
+         (beamprev (mxml::donne-figure (mxml::prv-cont self)))
+         (beamnext (mxml::donne-figure (mxml::nxt-cont self))))
+    (cond
+      ;; inside a group, neither first nor last
+      ((and (mxml::in-group? self)
+            (not (om::first-of-group? self))
+            (not (om::last-of-group? self))
+            (> beamself 0))
+       (cond ((and (> beamprev 0) (> beamnext 0)) "mid")
+             ((and (> beamprev 0) (not (> beamnext 0))) "end")
+             ((and (not (> beamprev 0)) (> beamnext 0)) "begin")
+             (t "no")))
+
+      ;; first of group
+      ((and (om::first-of-group? self) (> beamself 0))
+       (if (and (mxml::in-group? (mxml::prv-cont self))
+                (> beamprev 0)
+                (> beamnext 0)
+                (mxml::prv-is-samegrp? self))
+           "mid"
+           "begin"))
+
+      ;; last of group
+      ((and (om::last-of-group? self) (> beamself 0))
+       (if (and (mxml::in-group? (mxml::nxt-cont self))
+                (> beamprev 0)
+                (> beamnext 0)
+                (mxml::nxt-is-samegrp? self))
+           "mid"
+           "end"))
+
+      ;; outside groups: optionally say no
+      ((> beamself 0) "no")
+
+      (t nil))))
+
 ;;
 ;; main methods for #'cons-mscx-expr for relevant OM classes
 ;;
@@ -216,10 +254,13 @@ FREE is the written duration used for durationType."
          (head-and-pts (mxml::get-head-and-points dur))
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
          (nbpoints (cadr head-and-pts))
-         (inside (om::inside self)))
+         (beam-mode (mscx-beam-mode self))
+	 (inside (om::inside self)))
     (append
-     ;; take care to emit correct list order, which decides semantics in output
+     ;; take care to emit correct list order here and below in om::rest, which decides semantics in output
      (list "<Chord>")
+     (when beam-mode
+       (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
      (list (format nil "<durationType>~A</durationType>" (xml-head-to-mscx-duration-type note-head)))
@@ -252,9 +293,12 @@ FREE is the written duration used for durationType."
   (let* ((dur (if (listp free) (car free) free))
          (head-and-pts (mxml::get-head-and-points dur))
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
-         (nbpoints (cadr head-and-pts)))
+         (nbpoints (cadr head-and-pts))
+	 (beam-mode (mscx-beam-mode self)))
     (append
      (list "<Rest>")
+     (when beam-mode
+       (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
      (list (format nil "<durationType>~A</durationType>"
@@ -270,10 +314,7 @@ FREE is the written duration used for durationType."
          (denom (if (listp denom) (cadr denom) denom))
          (unite (/ durtot denom)))
 
-    (format t "~&GROUP ratio -> num=~A denom=~A unite=~A~%" num denom unite)    
-    
     (cond
-
       ;; not a tuplet-like group: recurse normally
       ((not (om::get-group-ratio self))
        (loop for obj in (om::inside self) append
