@@ -7,13 +7,13 @@
 ;; using parts from OMs export-mxml.lisp
 ;;
 
-(defpackage "mscx" 
+(defpackage "MSCX" 
   (:use "COMMON-LISP")
   (:use "MusicXML")
   (:use :om)
-  (:nicknames "mscx"))
+  (:nicknames :mscx))
 
-(in-package "mscx")
+(in-package :mscx)
 
 (pushnew :mscx *features*)
 
@@ -412,21 +412,26 @@ FREE is the written duration used for durationType."
      "</museScore>")))
 
 
+;;;===================================
+;;; OM INTERFACE / API
+;;;===================================
+
+
 ;; MAIN MSCX FILE OUTPUT
+
+(in-package :om)
 
 (defun write-mscx-file (list path)
   (with-open-file (out path :direction :output
-                       :if-does-not-exist :create :if-exists :supersede)
-    (loop for line in (mscx-header) do (format out "~A~%" line))
-    (om::recursive-write-xml out list -1)))
+			    :if-does-not-exist :create :if-exists :supersede)
+    (loop for line in (mscx::mscx-header) do (format out "~A~%" line))
+    (recursive-write-xml out list -1)))
 
 (defmethod mscx-export ((self t) &key keys approx path name) nil)
 
-(defmethod mscx-export ((self om::voice) &key keys approx path name)
+(defmethod mscx-export ((self voice) &key keys approx path name)
   (mscx-export (make-instance 'poly :voices self)
-               :keys keys :approx approx :path path :name name))
-
-;; OM side wrappers
+	       :keys keys :approx approx :path path :name name))
 
 (defmethod! export-mscx ((self t) &optional (keys nil) (approx 2) (path nil))
   :icon 351
