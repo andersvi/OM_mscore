@@ -159,6 +159,101 @@ FREE is the written duration used for durationType."
   (if (listp free) (car free) free))
 
 
+
+
+;;;
+;;; EXTRAS
+;;;
+
+(defparameter *om-head-text=>mscx-head-text*
+  '(("`" . "cross")
+    ("b" . "mi")
+    ("e" . "re")
+    ("d" . "diamond-old")
+    ("c" . "diamond")
+    ("i" . "la")
+    ("h" . "do")
+    ("f" . "triangle")
+    ("g" . "triangle")))
+
+(defun get-extra-by-kind (self kind)
+  (car (om::get-extras self kind)))
+
+(defun head-extra-for-note (note)
+  (get-extra-by-kind note "head"))
+
+(defun head-extra->mscx-head (extra)
+  (and extra
+       (cdr (assoc (om::thehead extra)
+                   *om-head-text=>mscx-head-text*
+                   :test #'equal))))
+
+(defun note-head-as-mscx (note)
+  (let ((head (head-extra->mscx-head (head-extra-for-note note))))
+    (when head
+      (list (format nil "<head>~A</head>" head)))))
+
+(defparameter *om-text-extra-rules*
+  '(("pizz"     :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
+    ("pizz."    :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
+    ("pizzicato" :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
+    ("arco"     :kind :play-tech :play-tech-type nil         :text "arco")
+    ("legato"   :kind :play-tech :play-tech-type "legato"    :text "legato")
+    ("martele"  :kind :play-tech :play-tech-type "martele"   :text "martelé")
+    ("martelé"  :kind :play-tech :play-tech-type "martele"   :text "martelé")
+    ("harmonic" :kind :play-tech :play-tech-type nil         :text "harmonic")
+    ("harmonics" :kind :play-tech :play-tech-type nil        :text "harmonics")))
+
+(defun normalize-extra-text (s)
+  (string-downcase (string-trim '(#\Space #\Tab #\Newline) (or s ""))))
+
+(defun text-extra-for-chord (chord)
+  (get-extra-by-kind chord "text"))
+
+(defun text-extra-text (extra)
+  (and extra (om::thetext extra)))
+
+(defun text-extra-rule (extra)
+  (let* ((text (text-extra-text extra))
+         (key (and text (normalize-extra-text text))))
+    (and key
+         (assoc key *om-text-extra-rules* :test #'string=))))
+
+(defun rule-prop (rule key)
+  (getf (cdr rule) key))
+
+(defun play-tech-annotation-as-mscx (text &optional play-tech-type)
+  (append
+   (list "<PlayTechAnnotation>")
+   (when play-tech-type
+     (list (format nil "<playTechType>~A</playTechType>" play-tech-type)))
+   (list (format nil "<text>~A</text>" text)
+         "</PlayTechAnnotation>")))
+
+(defun staff-text-as-mscx (text)
+  (list "<StaffText>"
+        (format nil "<text>~A</text>" text)
+        "</StaffText>"))
+
+(defun text-extra-as-mscx (chord)
+  (let* ((extra (text-extra-for-chord chord))
+         (raw-text (text-extra-text extra))
+         (rule (and extra (text-extra-rule extra))))
+    (cond
+      ((null extra) nil)
+      (rule
+       (case (rule-prop rule :kind)
+         (:play-tech
+          (play-tech-annotation-as-mscx (or (rule-prop rule :text) raw-text)
+                                        (rule-prop rule :play-tech-type)))
+         (:staff-text
+          (staff-text-as-mscx (or (rule-prop rule :text) raw-text)))
+         (otherwise
+          (staff-text-as-mscx raw-text))))
+      (raw-text
+       (staff-text-as-mscx raw-text))
+      (t nil))))
+
 ;;
 ;; TUPLETS
 ;;
@@ -333,8 +428,11 @@ FREE is the written duration used for durationType."
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
          (nbpoints (cadr head-and-pts))
          (beam-mode (mscx-beam-mode self))
-	 (inside (om::inside self)))
+	 (inside (om::inside self))
+         (tie-spanner (mscx-tie-spanner self free))
+         (text-extra (text-extra-as-mscx self)))
     (append
+     text-extra
      ;; take care to emit correct list order here and below in om::rest, which decides semantics in output
      (list "<Chord>")
      (when beam-mode
@@ -347,15 +445,16 @@ FREE is the written duration used for durationType."
 	   append
 	   (let* ((midi (om-midic-to-midi (om::midic note)))
 		  (tpc (note-to-mscx-tpc note approx))
-		  (vel (om::vel note)))
+		  (vel (om::vel note))
+                  (head-extra (note-head-as-mscx note)))
              (append
               (list "<Note>")
-              (when (mscx-tie-spanner self free)
-		(mscx-tie-spanner self free))
+              tie-spanner
               (list (format nil "<pitch>~D</pitch>" midi)
 		    (format nil "<tpc>~D</tpc>" tpc)
-		    (format nil "<velocity>~D</velocity>" vel)
-		    "</Note>"))))     
+		    (format nil "<velocity>~D</velocity>" vel))
+              head-extra
+		    (list "</Note>"))))     
      (list "</Chord>"))))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
@@ -564,6 +663,18 @@ FREE is the written duration used for durationType."
 (defmethod mscx-export ((self voice) &key keys approx path name)
   (mscx-export (make-instance 'poly :voices self)
 	       :keys keys :approx approx :path path :name name))
+
+(defmethod mscx-export ((self poly) &key keys approx path name)
+  (let* ((pathname (or path
+                       (om-choose-new-file-dialog
+                        :name (or name "om-export.mscx")
+                        :directory (or (and name (make-pathname :name nil :type nil :defaults name))
+                                       nil)
+                        :prompt "Export MuseScore MSCX")))
+         (content (mscx::cons-mscx-expr self :key (or keys '((G 2))) :approx (or approx 2))))
+    (when pathname
+      (write-mscx-file content pathname)
+      pathname)))
 
 (defmethod! export-mscx ((self t) &optional (keys nil) (approx 2) (path nil))
   :icon 351
