@@ -22,6 +22,14 @@
 (defun mscx-header ()
   (list "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
 
+;;;
+;;; pitch, pitch class
+;;;
+
+(defun om-midic-to-midi (midic)
+  "e.g. 6000 -> midi 60."
+  (round (/ midic 100)))
+
 (defparameter *mscx-tpc-table*
   '(("Cbb" . 0) ("Gbb" . 1) ("Dbb" . 2) ("Abb" . 3) ("Ebb" . 4) ("Bbb" . 5)
     ("Fb" . 6) ("Cb" . 7) ("Gb" . 8) ("Db" . 9) ("Ab" . 10) ("Eb" . 11)
@@ -45,16 +53,86 @@
                   :test #'string=))
       14))
 
-(defun om-midic-to-midi (midic)
-  "e.g. 6000 -> midi 60."
-  (round (/ midic 100)))
+;; ENHARMONICS
+;;
+;; lives in OMs 'tonalite class, for each note-object
+;; 
+;; TODO: micro-tone support, further scales.  various scale/spellings etc. are
+;; spread around in OM, needs cleanup in OM, or hacks here...
+;;
+;; the symbols inside tonalite are set in om-package: eg om:do, om::bemol ->
+;; compare with string= - can compare :keywords
+
+
+(defun om-tonnote->step-string (tonnote)
+  (cond ((string-equal tonnote :do)  "C")
+        ((string-equal tonnote :re)  "D")
+        ((string-equal tonnote :mi)  "E")
+        ((string-equal tonnote :fa)  "F")
+        ((string-equal tonnote :sol) "G")
+        ((string-equal tonnote :la)  "A")
+        ((string-equal tonnote :si)  "B")
+        (t nil)))
+
+(defun om-tonalt->acc-string (tonalt)
+  (flet ((accidental-tag (x)
+	   (cond ((null x) :none)
+		 ((and (consp x)
+		       (= (length x) 2)
+		       (every #'(lambda (y) (string-equal y :diese)) x))
+		  :double-sharp)
+		 ((and (consp x)
+		       (= (length x) 2)
+		       (every #'(lambda (y) (string-equal y :bemol)) x))
+		  :double-flat)
+		 ((string-equal x :becarre) :natural)
+		 ((string-equal x :diese) :sharp)
+		 ((string-equal x :bemol) :flat)
+		 (t nil))))
+    (case (accidental-tag tonalt)
+      (:none "")
+      (:natural "")
+      (:sharp "#")
+      (:flat "b")
+      (:double-sharp "##")
+      (:double-flat "bb")
+      (otherwise nil))))
+
+(defun om-tonalite-to-tpc (tonalite)
+  (let* ((step (and tonalite
+                    (om-tonnote->step-string (om::tonnote tonalite))))
+         (acc  (and tonalite
+                    (om-tonalt->acc-string (om::tonalt tonalite))))
+         (name (and step acc
+                    (format nil "~A~A" step acc))))
+    (and name
+         (cdr (assoc name *mscx-tpc-table* :test #'string=)))))
+
+(defun note-to-mscx-tpc (note approx)
+  (let* ((ton (om::tonalite note))
+         (tpc-from-tonalite (and ton (om-tonalite-to-tpc ton))))
+    (or tpc-from-tonalite
+        (let* ((note-values (mxml::mc->xmlvalues (om::midic note) approx))
+               (step (nth 1 note-values))
+               (alteration (nth 2 note-values)))
+          (step+alter-to-tpc step alteration))
+        14)))
+
+
+;; CLEFS
+
+(defun clef-sign->mscx-clef (sign)
+  (string-upcase (string sign)))
+
+
+;;;
+;;; DURATIONS
+;;;
+
 
 (defun xml-head-to-mscx-duration-type (note-head)
   "Current mxml::*note-types* gives MusicXML type names. For this hack we reuse them."
   note-head)
-
-(defun clef-sign->mscx-clef (sign)
-  (string-upcase (string sign)))
 
 (defun ratio-base-note-name (dur)
   "Map a duration unit to a MuseScore baseNote string.
@@ -264,29 +342,20 @@ FREE is the written duration used for durationType."
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
      (list (format nil "<durationType>~A</durationType>" (xml-head-to-mscx-duration-type note-head)))
+     
      (loop for note in inside
-           append
-           (let* ((note-values (mxml::mc->xmlvalues (om::midic note) approx))
-                  (step (nth 1 note-values))
-                  (alteration (nth 2 note-values))
-                  (midi (om-midic-to-midi (om::midic note)))
-                  (tpc (step+alter-to-tpc step alteration))
-                  (vel (om::vel note)))
-             
-	     ;; (list "<Note>"
-             ;;       (format nil "<pitch>~D</pitch>" midi)
-             ;;       (format nil "<tpc>~D</tpc>" tpc)
-             ;;       (format nil "<velocity>~D</velocity>" vel)
-             ;;       "</Note>")
-
-	     (append
-	      (list "<Note>")
-	      (when (mscx-tie-spanner self free)
+	   append
+	   (let* ((midi (om-midic-to-midi (om::midic note)))
+		  (tpc (note-to-mscx-tpc note approx))
+		  (vel (om::vel note)))
+             (append
+              (list "<Note>")
+              (when (mscx-tie-spanner self free)
 		(mscx-tie-spanner self free))
-	      (list (format nil "<pitch>~D</pitch>" midi)
+              (list (format nil "<pitch>~D</pitch>" midi)
 		    (format nil "<tpc>~D</tpc>" tpc)
 		    (format nil "<velocity>~D</velocity>" vel)
-		    "</Note>"))))
+		    "</Note>"))))     
      (list "</Chord>"))))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
