@@ -1,10 +1,10 @@
 ;;;========================
-;;; MSCX HELPERS (HACK V1)
+;;; OpenMusic export MSCX 
 ;;;========================
 
 ;;
 ;;
-;; using parts from OMs export-mxml.lisp
+;; requires existing code in OMs 'import-export/export-mxml.lisp'
 ;;
 
 (defpackage "MSCX" 
