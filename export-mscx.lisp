@@ -274,6 +274,86 @@ FREE is the written duration used for durationType."
       (t nil))))
 
 ;;
+;; DYNAMICS
+;; 
+;; velocity, and vel-extras set per note in OMs editors
+;;
+;;
+;; uses OMs various vel lookups etc in editor/scoreeditor/scoretools.lisp
+;; 
+
+
+;; were trying to support OMs - per-note dynamics (vel-extra)
+;; 
+(defparameter *mscx-dynamics-size* "0.6")
+(defparameter *mscx-dynamics-direction* "up")
+
+;; mapping used by mscore
+
+(defparameter *mscx-dynamic-velocities*
+  '((:ppp 16)
+    (:pp  33)
+    (:p   49)
+    (:mp  64)
+    (:mf  80)
+    (:f   96)
+    (:ff  112)
+    (:fff 126)))
+
+;; 
+;; OMs mapping is in om::*dynamics-symbols-list*,set in scoretools.lisp
+;; 
+;; (mapcar #'(lambda (d) (list (first d) (third d))) om::*dynamics-symbols-list*)
+;; 
+;; ((:ppp 20)
+;;  (:pp 40)
+;;  (:p 55)
+;;  (:mp 60)
+;;  (:mf 85)
+;;  (:f 100)
+;;  (:ff 115)
+;;  (:fff 127))
+
+
+
+(defun vel-extra-for-chord (chord)
+  (get-extra-by-kind chord "vel"))
+
+(defun chord-dynamic-symbol (chord)
+  "Use OM's own velocity->dynamic mapping."
+  (when (vel-extra-for-chord chord)
+    (let ((dyn (om::get-dyn-from-vel (om::vel chord))))
+      (when (symbolp dyn)
+        dyn))))
+
+(defun dynamic-symbol->mscx-subtype (dyn)
+  (string-downcase (symbol-name dyn)))
+
+(defun dynamic-symbol->mscx-velocity (dyn)
+  (or (cadr (assoc dyn *mscx-dynamic-velocities* :test #'equal))
+      80))
+
+(defun dynamic-as-mscx (dyn)
+  (list "<Dynamic>"
+        (format nil "<subtype>~A</subtype>"
+                (dynamic-symbol->mscx-subtype dyn))
+        (format nil "<velocity>~D</velocity>"
+                (dynamic-symbol->mscx-velocity dyn))
+        (format nil "<dynamicsSize>~A</dynamicsSize>"
+                *mscx-dynamics-size*)
+        (format nil "<direction>~A</direction>"
+                *mscx-dynamics-direction*)
+        "</Dynamic>"))
+
+(defun vel-extra-as-mscx (chord)
+  (let ((dyn (chord-dynamic-symbol chord)))
+    (when dyn
+      (dynamic-as-mscx dyn))))
+
+
+
+
+;;
 ;; TUPLETS
 ;;
 
@@ -447,33 +527,36 @@ FREE is the written duration used for durationType."
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
          (nbpoints (cadr head-and-pts))
          (beam-mode (mscx-beam-mode self))
-	 (inside (om::inside self))
+         (inside (om::inside self))
          (tie-spanner (mscx-tie-spanner self free))
-         (text-extra (text-extra-as-mscx self)))
+         (text-extra (text-extra-as-mscx self))
+         (vel-extra (vel-extra-as-mscx self)))
     (append
+     ;; ensure correct list order here, and below in om::rest, order decides semantics in output
      text-extra
-     ;; take care to emit correct list order here and below in om::rest, which decides semantics in output
+     vel-extra
      (list "<Chord>")
      (when beam-mode
        (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
      (loop for i from 1 to nbpoints
            collect "<dots>1</dots>")
-     (list (format nil "<durationType>~A</durationType>" (xml-head-to-mscx-duration-type note-head)))
-     
+     (list (format nil "<durationType>~A</durationType>"
+                   (xml-head-to-mscx-duration-type note-head)))
+
      (loop for note in inside
-	   append
-	   (let* ((midi (om-midic-to-midi (om::midic note)))
-		  (tpc (note-to-mscx-tpc note approx))
-		  (vel (om::vel note))
+           append
+           (let* ((midi (om-midic-to-midi (om::midic note)))
+                  (tpc (note-to-mscx-tpc note approx))
+                  (vel (om::vel note))
                   (head-extra (note-head-as-mscx note)))
              (append
               (list "<Note>")
               tie-spanner
               (list (format nil "<pitch>~D</pitch>" midi)
-		    (format nil "<tpc>~D</tpc>" tpc)
-		    (format nil "<velocity>~D</velocity>" vel))
+                    (format nil "<tpc>~D</tpc>" tpc)
+                    (format nil "<velocity>~D</velocity>" vel))
               head-extra
-		    (list "</Note>"))))     
+              (list "</Note>"))))
      (list "</Chord>"))))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
