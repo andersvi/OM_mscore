@@ -165,16 +165,35 @@ FREE is the written duration used for durationType."
 ;;; EXTRAS
 ;;;
 
+;; ("f" "R" "^" "d" "n" "S" "Q" "P" "_" "`" "a" "b" "c" "d" "e" "f" "g" "h" "i")
+
+;; ((1 "f") (2 "R") (3 "^") (4 "d")
+;; (5 "n") (6 "S") (7 "Q") (8 "P")
+;; (9 "_") (10 "`") (11 "a") (12 "b")
+;; (13 "c") (14 "d") (15 "e") (16 "f")
+;; (17 "g") (18 "h") (19 "i"))
+
 (defparameter *om-head-text=>mscx-head-text*
-  '(("`" . "cross")
-    ("b" . "mi")
-    ("e" . "re")
-    ("d" . "diamond-old")
-    ("c" . "diamond")
-    ("i" . "la")
-    ("h" . "do")
-    ("f" . "triangle")
-    ("g" . "triangle")))
+  '(("f" . "triangle-up")
+    ("R" . "altbrevis") 				    ; + head-type brevis
+    ("^" . "triangle-down")				    ; + head-type semibreve
+    ("d" . "diamond")
+    ("n" . "do")
+    ("S" . "breve + double || bars")			    ; + note-head brevis
+    ("Q" . "breve")					    ; + note-head brevis
+    ("P" . "altbrevis")					    ; + note-head semi-brevis
+    ("_" . "triangle-down")
+    ("`" . "heavy-cross")
+    ("a" . "diamond")
+    ("b" . "la")					    ;(square) + note-head semi-brevis
+    ("c" . "large-diamond")				    ;+note-head semi-brevis
+    ("d" . "large-diamond")
+    ("e" . "la")					    ;(square)
+    ("f" . "fa")
+    ("g" . "mi")
+    ("h" . "xcircle")
+    ("i" . "sol")
+    ))
 
 (defun get-extra-by-kind (self kind)
   (car (om::get-extras self kind)))
