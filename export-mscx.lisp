@@ -160,10 +160,13 @@ FREE is the written duration used for durationType."
 
 
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; EXTRAS
 ;;;
+
+
+;; TEXT extras
 
 ;; ("f" "R" "^" "d" "n" "S" "Q" "P" "_" "`" "a" "b" "c" "d" "e" "f" "g" "h" "i")
 
@@ -273,6 +276,7 @@ FREE is the written duration used for durationType."
        (staff-text-as-mscx raw-text))
       (t nil))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; DYNAMICS
 ;; 
@@ -369,6 +373,11 @@ FREE is the written duration used for durationType."
   (list "<endTuplet/>"))
 
 
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; TIES
 ;; 
@@ -474,6 +483,7 @@ FREE is the written duration used for durationType."
               "</Spanner>")))
       (otherwise nil))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; SLURS
 ;;
@@ -622,9 +632,13 @@ Computed only from preceding chords in the same measure."
   (loop for name in (chord-slur-names chord)
         append (mscx-slur-spanner-for-name chord name)))
 
-;;
-;; CONS-MSCX-EXPR - main work for relevant OM classes
-;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  
+;; BEAMS
+;; 
+
 
 (defun mscx-beam-mode (self)
   (let* ((beamself (mxml::donne-figure self))
@@ -661,22 +675,33 @@ Computed only from preceding chords in the same measure."
 
       ;; outside groups: optionally say no
       ((> beamself 0) "no")
-
       (t nil))))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+;;
+;;
+;; CONS-MSCX-EXPR - main work for relevant OM classes
+;;
+
 
 (defgeneric cons-mscx-expr (self &key free key approx part))
 
 (defmethod cons-mscx-expr ((self om::chord) &key free key (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
-         (head-and-pts (mxml::get-head-and-points dur))
-         (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
-         (nbpoints (cadr head-and-pts))
-         (beam-mode (mscx-beam-mode self))
-         (inside (om::inside self))
-         (tie-spanner (mscx-tie-spanner self free))
-         (slur-spanners (mscx-slur-spanners self))
-         (text-extra (text-extra-as-mscx self))
-         (vel-extra (vel-extra-as-mscx self)))
+	 (head-and-pts (mxml::get-head-and-points dur))
+	 (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
+	 (nbpoints (cadr head-and-pts))
+	 (beam-mode (mscx-beam-mode self))
+	 (inside (om::inside self))
+	 (tie-spanner (mscx-tie-spanner self free))
+	 (slur-spanners (mscx-slur-spanners self))
+	 (text-extra (text-extra-as-mscx self))
+	 (vel-extra (vel-extra-as-mscx self))
+	 (char-extra (char-extras-as-mscx self)))
     (append
      ;; ensure correct list order here, and below in om::rest, order decides semantics in output
      text-extra
