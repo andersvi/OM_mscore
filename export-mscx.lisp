@@ -355,6 +355,217 @@ FREE is the written duration used for durationType."
       (dynamic-as-mscx dyn))))
 
 ;;
+;; CHAR-EXTRAS -> MSCX articulations / fermatas
+;;
+
+;; a list of some of the articulations from mscore, as named in .mscx files
+;; manually grabbed from various mscx-files
+;;
+;; for those actually used in OMs char-extras, check mapping
+;; 
+
+(defparameter *mscx-articulation-symbol-pool*
+  '(
+    ;; ------------------------------------------------------------
+    ;; BOWING / STRINGS / PLUCKED
+    ;; ------------------------------------------------------------
+    (nil :tag "Articulation" :subtype "stringsUpBow" :group :bowing)
+    (nil :tag "Articulation" :subtype "stringsDownBow" :group :bowing)
+    (nil :tag "Articulation" :subtype "stringsHarmonic" :group :strings)
+    (nil :tag "Articulation" :subtype "stringsThumbPosition" :group :strings)
+    (nil :tag "Articulation" :subtype "pluckedSnapPizzicatoAbove" :group :plucked)
+
+    ;; ------------------------------------------------------------
+    ;; STANDARD ARTICULATIONS
+    ;; ------------------------------------------------------------
+    (nil :tag "Articulation" :subtype "articAccentBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articSoftAccentBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articMarcatoAbove" :group :articulation)
+    (nil :tag "Articulation" :subtype "articStressBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articUnstressBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articTenutoBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articStaccatoBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articStaccatissimoBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articStaccatissimoStrokeBelow" :group :articulation)
+    (nil :tag "Articulation" :subtype "articStaccatissimoWedgeBelow" :group :articulation)
+
+    ;; ------------------------------------------------------------
+    ;; COMBINED ARTICULATIONS
+    ;; ------------------------------------------------------------
+    (nil :tag "Articulation" :subtype "articTenutoStaccatoBelow" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articAccentStaccatoBelow" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articMarcatoStaccatoAbove" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articMarcatoTenutoAbove" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articTenutoAccentBelow" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articSoftAccentStaccatoBelow" :group :articulation-combo)
+    (nil :tag "Articulation" :subtype "articSoftAccentTenutoBelow" :group :articulation-combo)
+
+    ;; ------------------------------------------------------------
+    ;; FERMATAS
+    ;; ------------------------------------------------------------
+    (nil :tag "Fermata" :subtype "fermataAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataShortAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataVeryShortAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataLongAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataVeryLongAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataShortHenzeAbove" :group :fermata)
+    (nil :tag "Fermata" :subtype "fermataLongHenzeAbove" :group :fermata)
+
+    ;; ------------------------------------------------------------
+    ;; ORNAMENTS
+    ;; ------------------------------------------------------------
+    (nil :tag "Ornament" :subtype "ornamentTrill" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentShortTrill" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTurn" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTurnInverted" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTurnSlash" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTurnUp" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTurnUpS" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentMordent" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentUpMordent" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentDownMordent" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPrallUp" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPrallDown" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPrallMordent" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentLinePrall" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPinceCouperin" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentHaydn" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTremblement" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentTremblementCouperin" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentShake3" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentShakeMuffat1" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPrecompMordentUpperPrefix" :group :ornament)
+    (nil :tag "Ornament" :subtype "ornamentPrecompSlide" :group :ornament)
+    (nil :tag "Ornament" :subtype "brassMuteClosed" :group :ornament)
+
+    ;; ------------------------------------------------------------
+    ;; TRILLS
+    ;; ------------------------------------------------------------
+    (nil :tag "Trill" :subtype "trill" :group :trill)
+    (nil :tag "Trill" :subtype "upprall" :group :trill)
+    (nil :tag "Trill" :subtype "downprall" :group :trill)
+    (nil :tag "Trill" :subtype "prallprall" :group :trill)
+
+    ;; ------------------------------------------------------------
+    ;; TREMOLO
+    ;; ------------------------------------------------------------
+    (nil :tag "TremoloSingleChord" :subtype "r8" :group :tremolo-single)
+    (nil :tag "TremoloSingleChord" :subtype "r16" :group :tremolo-single)
+    (nil :tag "TremoloSingleChord" :subtype "r32" :group :tremolo-single)
+    (nil :tag "TremoloSingleChord" :subtype "r64" :group :tremolo-single)
+    (nil :tag "TremoloSingleChord" :subtype "buzzroll" :group :tremolo-single)
+
+    (nil :tag "TremoloTwoChord" :subtype "c8" :group :tremolo-two)
+    (nil :tag "TremoloTwoChord" :subtype "c16" :group :tremolo-two)
+    (nil :tag "TremoloTwoChord" :subtype "c32" :group :tremolo-two)
+    (nil :tag "TremoloTwoChord" :subtype "c64" :group :tremolo-two)
+
+    ;; ------------------------------------------------------------
+    ;; ARPEGGIO / CHORD LINE
+    ;; ------------------------------------------------------------
+    (nil :tag "Arpeggio" :subtype "0" :group :arpeggio)
+    (nil :tag "Arpeggio" :subtype "1" :group :arpeggio)
+    (nil :tag "Arpeggio" :subtype "2" :group :arpeggio)
+    (nil :tag "Arpeggio" :subtype "3" :group :arpeggio)
+    (nil :tag "Arpeggio" :subtype "4" :group :arpeggio)
+    (nil :tag "Arpeggio" :subtype "5" :group :arpeggio)
+
+    (nil :tag "ChordLine" :subtype "1" :group :chord-line)
+    (nil :tag "ChordLine" :subtype "2" :group :chord-line)
+    (nil :tag "ChordLine" :subtype "3" :group :chord-line)
+    (nil :tag "ChordLine" :subtype "4" :group :chord-line)
+
+    ;; ------------------------------------------------------------
+    ;; OTHER SPECIALS
+    ;; ------------------------------------------------------------
+    (nil :tag "Articulation" :subtype "brassMuteClosed" :group :brass)
+    (nil :tag "Articulation" :subtype "brassMuteOpen" :group :brass)
+
+    (nil :tag "Articulation" :subtype "guitarFadeIn" :group :guitar)
+    (nil :tag "Articulation" :subtype "guitarFadeOut" :group :guitar)
+
+    (nil :tag "Articulation" :subtype "luteFingeringRHThumb" :group :lute)
+    (nil :tag "Articulation" :subtype "luteFingeringRHFirst" :group :lute)
+    (nil :tag "Articulation" :subtype "luteFingeringRHSecond" :group :lute)
+    (nil :tag "Articulation" :subtype "luteFingeringRHThird" :group :lute)
+
+    (nil :tag "Articulation" :subtype "pictHalfOpen2" :group :winds)
+
+    (nil :tag "Articulation" :subtype "tremoloDivisiDots2" :group :tremolo-divisi)
+    (nil :tag "Articulation" :subtype "tremoloDivisiDots3" :group :tremolo-divisi)
+    (nil :tag "Articulation" :subtype "tremoloDivisiDots4" :group :tremolo-divisi)
+    (nil :tag "Articulation" :subtype "tremoloDivisiDots6" :group :tremolo-divisi)
+
+    (nil :tag "Articulation" :subtype "wiggleSawtooth" :group :wiggle)
+    (nil :tag "Articulation" :subtype "wiggleSawtoothWide" :group :wiggle)
+    (nil :tag "Articulation" :subtype "wiggleVibratoLargeFaster" :group :wiggle)
+    (nil :tag "Articulation" :subtype "wiggleVibratoLargeSlowest" :group :wiggle)))
+
+
+
+;; Mapping from OMs 'char extras - using #'thechar
+
+(defparameter *om-char-extra->mscx*
+  ;; NOTE:
+  ;; OM-char values below are placeholders / first guesses.
+
+  '(
+    ("s" :group :bowing       :tag "Articulation" :subtype "stringsDownBow")
+    ("r" :group :bowing	      :tag "Articulation" :subtype "stringsUpBow")
+    ("t" :group :articulation :tag "Articulation" :subtype "articStaccatissimoBelow")
+    ("u" :group :articulation :tag "Articulation" :subtype "articTenutoStaccatoBelow")
+    ("v" :group :articulation :tag "Articulation" :subtype "articTenutoStaccatoBelow")
+    ("w" :group :articulation :tag "Articulation" :subtype "articMarcatoAbove")
+    ("{" :group :articulation :tag "Articulation" :subtype "articMarcatoAbove")
+    ("x" :group :articulation :tag "Articulation" :subtype "articTenutoBelow")
+    ("y" :group :articulation :tag "Articulation" :subtype "articAccentStaccatoAbove")
+    ("z" :group :articulation :tag "Articulation" :subtype "articAccentStaccatoBelow")
+    ("|" :group :fermata      :tag "Fermata"      :subtype "fermataAbove")
+    ("}" :group :fermata      :tag "Fermata"      :subtype "fermataAbove")
+    ))
+
+(defun char-extra-p (x)
+  (typep x 'om::char-extra))
+
+(defun chord-char-extras (chord)
+  (remove-if-not #'char-extra-p
+                 (om::get-extras chord "all")))
+
+(defun char-extra-char (extra)
+  "Return the raw OM char code used to look up the glyph. "
+  (and extra (om::thechar extra)))
+
+(defun find-char-extra-mscx-mapping (char)
+  (and char
+       (assoc char *om-char-extra->mscx* :test #'string=)))
+
+(defun char-extra-mscx-tag (mapping)
+  (getf (cdr mapping) :tag))
+
+(defun char-extra-mscx-subtype (mapping)
+  (getf (cdr mapping) :subtype))
+
+(defun mscx-tag+subtype->xml (tag subtype)
+  (list (format nil "<~A>" tag)
+        (format nil "<subtype>~A</subtype>" subtype)
+        (format nil "</~A>" tag)))
+
+(defun char-extra->mscx (extra)
+  (let* ((char (char-extra-char extra))
+         (mapping (find-char-extra-mscx-mapping char)))
+    (when mapping
+      (mscx-tag+subtype->xml
+       (char-extra-mscx-tag mapping)
+       (char-extra-mscx-subtype mapping)))))
+
+(defun char-extras-as-mscx (chord)
+  (loop for extra in (chord-char-extras chord)
+        append (or (char-extra->mscx extra) nil)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;
 ;; TUPLETS
 ;;
 
@@ -710,19 +921,22 @@ Computed only from preceding chords in the same measure."
      (when beam-mode
        (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
      (loop for i from 1 to nbpoints
-           collect "<dots>1</dots>")
+	   collect "<dots>1</dots>")
      (list (format nil "<durationType>~A</durationType>"
-                   (xml-head-to-mscx-duration-type note-head)))
+		   (xml-head-to-mscx-duration-type note-head)))
 
      ;; slurs are chord-level spanners in MSCX
      slur-spanners
 
+     ;; char-extras are also chord-level in MSCX
+     char-extra
+
      (loop for note in inside
-           append
-           (let* ((midi (om-midic-to-midi (om::midic note)))
-                  (tpc (note-to-mscx-tpc note approx))
-                  (vel (om::get-object-vel note))
-                  (head-extra (note-head-as-mscx note)))
+	   append
+	   (let* ((midi (om-midic-to-midi (om::midic note)))
+		  (tpc (note-to-mscx-tpc note approx))
+		  (vel (om::get-object-vel note))
+		  (head-extra (note-head-as-mscx note)))
              (append
               (list "<Note>")
               tie-spanner
@@ -731,7 +945,8 @@ Computed only from preceding chords in the same measure."
                     (format nil "<velocity>~D</velocity>" vel))
               head-extra
               (list "</Note>"))))
-     (list "</Chord>"))))
+     (list "</Chord>"))
+    ))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
