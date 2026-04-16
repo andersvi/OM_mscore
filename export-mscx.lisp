@@ -474,6 +474,158 @@ FREE is the written duration used for durationType."
               "</Spanner>")))
       (otherwise nil))))
 
+;;
+;; SLURS
+;;
+
+(defun slur-extra-p (x)
+  (typep x 'om::slur))
+
+(defun chord-slur-extras (chord)
+  (remove-if-not #'slur-extra-p
+                 (om::get-extras chord "all")))
+
+(defun chord-slur-names (chord)
+  (remove nil
+          (remove-duplicates
+           (mapcar #'om::slurname (chord-slur-extras chord))
+           :test #'equal)))
+
+(defun chord-has-slur-name-p (chord slurname)
+  (find slurname (chord-slur-names chord) :test #'equal))
+
+(defun find-next-chord-with-slur-name (chord slurname)
+  (loop for c = (next-chord chord) then (and c (next-chord c))
+        while c
+        when (chord-has-slur-name-p c slurname)
+          do (return c)))
+
+(defun find-prev-chord-with-slur-name (chord slurname)
+  (loop for c = (prev-chord chord) then (and c (prev-chord c))
+        while c
+        when (chord-has-slur-name-p c slurname)
+          do (return c)))
+
+(defun measure-number (measure)
+  (let ((parent (om::container measure)))
+    (when parent
+      (1+ (or (position measure (om::inside parent) :test #'eq) -1)))))
+
+(defun chord-offset-in-measure (chord)
+  "Offset from start of measure to CHORD, in whole-note fractions.
+Computed only from preceding chords in the same measure."
+  (loop with sum = 0
+        for c = (prev-chord chord) then (prev-chord c)
+        while (and c (same-measure-p c chord))
+        do (incf sum (obj-actual-dur c))
+        finally (return sum)))
+
+(defun chord-distance-forward (from to)
+  "Distance in actual time from FROM to TO, excluding TO."
+  (loop with sum = 0
+        for c = from then (next-chord c)
+        while c
+        do (when (eq c to)
+             (return sum))
+           (incf sum (obj-actual-dur c))))
+
+(defun measure-distance-forward (from-measure to-measure)
+  "Count measures forward from FROM-MEASURE to TO-MEASURE."
+  (loop with count = 0
+        for m = from-measure then (om::next-container m '(om::measure))
+        while m
+        do (when (eq m to-measure)
+             (return count))
+           (incf count)))
+
+(defun mscx-forward-location-between-chords (from to)
+  (let* ((from-measure (mxml::get-parent-measure from))
+         (to-measure (mxml::get-parent-measure to)))
+    (cond
+      ((eq from-measure to-measure)
+       (list "<location>"
+             (format nil "<fractions>~A</fractions>"
+                     (ratio->mscx-fraction-string
+                      (chord-distance-forward from to)))
+             "</location>"))
+
+      (t
+       (let* ((measure-diff (measure-distance-forward from-measure to-measure))
+              (to-offset (chord-offset-in-measure to)))
+         (append
+          (list "<location>"
+                (format nil "<measures>~D</measures>" measure-diff))
+          (when (not (zerop to-offset))
+            (list (format nil "<fractions>~A</fractions>"
+                          (ratio->mscx-fraction-string to-offset))))
+          (list "</location>")))))))
+
+(defun mscx-backward-location-between-chords (from to)
+  "Location from FROM back to TO, encoded as negative measure/fraction offsets."
+  (let* ((from-measure (mxml::get-parent-measure from))
+         (to-measure (mxml::get-parent-measure to)))
+    (cond
+      ((eq from-measure to-measure)
+       (list "<location>"
+             (format nil "<fractions>-~A</fractions>"
+                     (ratio->mscx-fraction-string
+                      (chord-distance-forward to from)))
+             "</location>"))
+
+      (t
+       (let* ((measure-diff (measure-distance-forward to-measure from-measure))
+              (from-offset (chord-offset-in-measure from)))
+         (append
+          (list "<location>"
+                (format nil "<measures>-~D</measures>" measure-diff))
+          (when (not (zerop from-offset))
+            (list (format nil "<fractions>-~A</fractions>"
+                          (ratio->mscx-fraction-string from-offset))))
+          (list "</location>")))))))
+
+(defun mscx-slur-spanner-for-name (chord slurname)
+  (let ((prev (find-prev-chord-with-slur-name chord slurname))
+        (next (find-next-chord-with-slur-name chord slurname)))
+    (cond
+      ((and (null prev) next)
+       (list "<Spanner type=\"Slur\">"
+             "<Slur/>"
+             "<next>"
+             (mscx-forward-location-between-chords chord next)
+             "</next>"
+             "</Spanner>"))
+
+      ((and prev (null next))
+       (list "<Spanner type=\"Slur\">"
+             "<prev>"
+             (mscx-backward-location-between-chords chord prev)
+             "</prev>"
+             "</Spanner>"))
+
+      ((and prev next)
+       (append
+        (list "<Spanner type=\"Slur\">"
+              "<prev>"
+              (mscx-backward-location-between-chords chord prev)
+              "</prev>"
+              "</Spanner>")
+        (list "<Spanner type=\"Slur\">"
+              "<Slur/>"
+              "<next>"
+              (mscx-forward-location-between-chords chord next)
+              "</next>"
+              "</Spanner>")))
+
+      (t nil))))
+
+(defun mscx-slur-spanners (chord)
+  (loop for name in (chord-slur-names chord)
+        append (mscx-slur-spanner-for-name chord name)))
+
+;;
+;; CONS-MSCX-EXPR - main work for relevant OM classes
+;;
+
 (defun mscx-beam-mode (self)
   (let* ((beamself (mxml::donne-figure self))
          (beamprev (mxml::donne-figure (mxml::prv-cont self)))
@@ -512,10 +664,6 @@ FREE is the written duration used for durationType."
 
       (t nil))))
 
-;;
-;; main methods for #'cons-mscx-expr for relevant OM classes
-;;
-
 (defgeneric cons-mscx-expr (self &key free key approx part))
 
 (defmethod cons-mscx-expr ((self om::chord) &key free key (approx 2) part)
@@ -526,6 +674,7 @@ FREE is the written duration used for durationType."
          (beam-mode (mscx-beam-mode self))
          (inside (om::inside self))
          (tie-spanner (mscx-tie-spanner self free))
+         (slur-spanners (mscx-slur-spanners self))
          (text-extra (text-extra-as-mscx self))
          (vel-extra (vel-extra-as-mscx self)))
     (append
@@ -539,6 +688,9 @@ FREE is the written duration used for durationType."
            collect "<dots>1</dots>")
      (list (format nil "<durationType>~A</durationType>"
                    (xml-head-to-mscx-duration-type note-head)))
+
+     ;; slurs are chord-level spanners in MSCX
+     slur-spanners
 
      (loop for note in inside
            append
