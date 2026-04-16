@@ -322,7 +322,7 @@ FREE is the written duration used for durationType."
 (defun chord-dynamic-symbol (chord)
   "Use OM's own velocity->dynamic mapping."
   (when (vel-extra-for-chord chord)
-    (let ((dyn (om::get-dyn-from-vel (om::vel chord))))
+    (let ((dyn (om::get-dyn-from-vel (om::get-object-vel chord))))
       (when (symbolp dyn)
         dyn))))
 
@@ -349,9 +349,6 @@ FREE is the written duration used for durationType."
   (let ((dyn (chord-dynamic-symbol chord)))
     (when dyn
       (dynamic-as-mscx dyn))))
-
-
-
 
 ;;
 ;; TUPLETS
@@ -547,7 +544,7 @@ FREE is the written duration used for durationType."
            append
            (let* ((midi (om-midic-to-midi (om::midic note)))
                   (tpc (note-to-mscx-tpc note approx))
-                  (vel (om::vel note))
+                  (vel (om::get-object-vel note))
                   (head-extra (note-head-as-mscx note)))
              (append
               (list "<Note>")
