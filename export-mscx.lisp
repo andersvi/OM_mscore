@@ -899,6 +899,37 @@ Computed only from preceding chords in the same measure."
 ;;
 
 
+
+
+(defun mscx-grace-duration-type-from-count (count)
+  "Heuristic visual duration for OM grace groups.
+1-3 notes -> eighth, 4-7 -> 16th, 8+ -> 32nd."
+  (cond ((<= count 3) "eighth")
+        ((<= count 7) "16th")
+        (t "32nd")))
+
+(defun cons-mscx-grace-chord (self &key group-size (approx 2))
+  "Export one OM grace-chord as a MuseScore acciaccatura.
+Grace notes are emitted without extras, beams, ties, slurs, or text.
+Only basic chord/note content is preserved."
+  (let* ((inside (om::inside self))
+         (duration-type (mscx-grace-duration-type-from-count (or group-size 1))))
+    (append
+     (list "<Chord>"
+           (format nil "<durationType>~A</durationType>" duration-type)
+           "<acciaccatura/>")
+     (loop for note in inside
+           append
+           (let* ((midi (om-midic-to-midi (om::midic note)))
+                  (tpc (note-to-mscx-tpc note approx))
+                  (vel (om::get-object-vel note)))
+             (list "<Note>"
+                   (format nil "<pitch>~D</pitch>" midi)
+                   (format nil "<tpc>~D</tpc>" tpc)
+                   (format nil "<velocity>~D</velocity>" vel)
+                   "</Note>")))
+     (list "</Chord>"))))
+
 (defgeneric cons-mscx-expr (self &key free key approx part))
 
 (defmethod cons-mscx-expr ((self om::chord) &key free key (approx 2) part)
@@ -912,8 +943,19 @@ Computed only from preceding chords in the same measure."
 	 (slur-spanners (mscx-slur-spanners self))
 	 (text-extra (text-extra-as-mscx self))
 	 (vel-extra (vel-extra-as-mscx self))
-	 (char-extra (char-extras-as-mscx self)))
+	 (char-extra (char-extras-as-mscx self))
+         (grace-notes-obj (ignore-errors (om::gnotes self)))
+         (graces (and grace-notes-obj
+                      (ignore-errors (om::glist grace-notes-obj))))
+         (group-size (length graces)))
     (append
+     ;; OM grace groups are exported as MuseScore acciaccaturas.
+     ;; durationType is chosen heuristically from group size for readability only.
+     (loop for grace-chord in graces
+           append (cons-mscx-grace-chord grace-chord
+                                         :group-size group-size
+                                         :approx approx))
+
      ;; ensure correct list order here, and below in om::rest, order decides semantics in output
      text-extra
      vel-extra
