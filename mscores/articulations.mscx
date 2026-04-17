@@ -21,228 +21,56 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
+				<StaffText>
+				<text>ord</text>
+				</StaffText>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>stringsUpBow</subtype>
-				</Articulation>
 				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articStaccatissimoBelow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>stringsDownBow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articTenutoStaccatoBelow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
+				<PlayTechAnnotation>
+				<playTechType>pizzicato</playTechType>
+				<text>pizz.</text>
+				</PlayTechAnnotation>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articTenutoStaccatoBelow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articMarcatoAbove</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articTenutoBelow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articAccentStaccatoAbove</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articAccentStaccatoBelow</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Articulation>
-				<subtype>articMarcatoAbove</subtype>
-				</Articulation>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Fermata>
-				<subtype>fermataAbove</subtype>
-				</Fermata>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Fermata>
-				<subtype>fermataAbove</subtype>
-				</Fermata>
-				<Note>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
-				<velocity>80</velocity>
+				<head>triangle-down</head>
 				</Note>
 				</Chord>
 			<BarLine>
