@@ -727,11 +727,6 @@ FREE is the written duration used for durationType."
         when (chord-has-slur-name-p c slurname)
           do (return c)))
 
-(defun measure-number (measure)
-  (let ((parent (om::container measure)))
-    (when parent
-      (1+ (or (position measure (om::inside parent) :test #'eq) -1)))))
-
 (defun chord-offset-in-measure (chord)
   "Offset from start of measure to CHORD, in whole-note fractions.
 Computed only from preceding chords in the same measure."
@@ -944,11 +939,13 @@ Only basic chord/note content is preserved."
 	 (text-extra (text-extra-as-mscx self))
 	 (vel-extra (vel-extra-as-mscx self))
 	 (char-extra (char-extras-as-mscx self))
-         (grace-notes-obj (ignore-errors (om::gnotes self)))
-         (graces (and grace-notes-obj
-                      (ignore-errors (om::glist grace-notes-obj))))
+	 (grace-notes-obj (and (fboundp 'om::gnotes) (om::gnotes self)))
+	 (graces (and grace-notes-obj
+		      (ignore-errors (om::glist grace-notes-obj))))
          (group-size (length graces)))
     (append
+     (current-tempo-as-mscx)
+
      ;; OM grace groups are exported as MuseScore acciaccaturas.
      ;; durationType is chosen heuristically from group size for readability only.
      (loop for grace-chord in graces
@@ -987,8 +984,7 @@ Only basic chord/note content is preserved."
                     (format nil "<velocity>~D</velocity>" vel))
               head-extra
               (list "</Note>"))))
-     (list "</Chord>"))
-    ))
+     (list "</Chord>"))))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
@@ -997,6 +993,7 @@ Only basic chord/note content is preserved."
          (nbpoints (cadr head-and-pts))
 	 (beam-mode (mscx-beam-mode self)))
     (append
+     (current-tempo-as-mscx)
      (list "<Rest>")
      (when beam-mode
        (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
@@ -1018,24 +1015,37 @@ Only basic chord/note content is preserved."
     (cond
       ;; not a tuplet-like group: recurse normally
       ((not (om::get-group-ratio self))
-       (loop for obj in (om::inside self) append
-             (let* ((dur-obj (/ (/ (om::extent obj) (om::qvalue obj))
-                                (/ (om::extent self) (om::qvalue self)))))
-               (cons-mscx-expr obj :free (* dur-obj durtot) :approx approx :part part))))
+       (let ((running-offset 0))
+         (loop for obj in (om::inside self) append
+               (let* ((dur-obj (/ (/ (om::extent obj) (om::qvalue obj))
+                                  (/ (om::extent self) (om::qvalue self))))
+                      (obj-free (* dur-obj durtot)))
+                 (prog1
+                     (let ((*mscx-current-offset*
+                             (+ *mscx-current-offset* running-offset)))
+                       (cons-mscx-expr obj :free obj-free :approx approx :part part))
+                   (incf running-offset obj-free))))))
 
       ;; ratio simplifies away: recurse normally
       ((= (/ num denom) 1)
-       (loop for obj in (om::inside self)
-             append
-             (let* ((operation (/ (/ (om::extent obj) (om::qvalue obj))
-                                  (/ (om::extent self) (om::qvalue self))))
-                    (dur-obj (* num operation)))
-               (cons-mscx-expr obj :free (* dur-obj unite) :approx approx :part part))))
+       (let ((running-offset 0))
+         (loop for obj in (om::inside self)
+               append
+               (let* ((operation (/ (/ (om::extent obj) (om::qvalue obj))
+                                    (/ (om::extent self) (om::qvalue self))))
+                      (dur-obj (* num operation))
+                      (obj-free (* dur-obj unite)))
+                 (prog1
+                     (let ((*mscx-current-offset*
+                             (+ *mscx-current-offset* running-offset)))
+                       (cons-mscx-expr obj :free obj-free :approx approx :part part))
+                   (incf running-offset obj-free))))))
 
       ;; real tuplet
       (t
        (let ((depth 0)
              (rep nil)
+             (running-offset 0)
              ;; base note should be the written value of one unit inside the tuplet.
              ;; For 3 eighths in the time of 2 eighths, this should become "eighth".
              (base-note (ratio-base-note-name unite)))
@@ -1044,23 +1054,150 @@ Only basic chord/note content is preserved."
                            (make-mscx-tuplet-start num denom base-note)))
 
          (loop for obj in (om::inside self) do
-               (setf rep
-                     (append rep
-                             (let* ((operation (/ (/ (om::extent obj) (om::qvalue obj))
-                                                  (/ (om::extent self) (om::qvalue self))))
-                                    (dur-obj (* num operation))
-                                    (tmp (multiple-value-list
-                                          (cons-mscx-expr obj
-                                                          :free (list (* dur-obj unite) cpt)
-                                                          :approx approx
-                                                          :part part)))
-                                    (exp (car tmp)))
-                               (when (and (cadr tmp) (> (cadr tmp) depth))
-                                 (setf depth (cadr tmp)))
-                               exp))))
+               (let* ((operation (/ (/ (om::extent obj) (om::qvalue obj))
+                                    (/ (om::extent self) (om::qvalue self))))
+                      (dur-obj (* num operation))
+                      (obj-free (* dur-obj unite))
+                      (tmp (let ((*mscx-current-offset*
+                                   (+ *mscx-current-offset* running-offset)))
+                             (multiple-value-list
+                              (cons-mscx-expr obj
+                                              :free (list obj-free cpt)
+                                              :approx approx
+                                              :part part))))
+                      (exp (car tmp)))
+                 (when (and (cadr tmp) (> (cadr tmp) depth))
+                   (setf depth (cadr tmp)))
+                 (setf rep (append rep exp))
+                 (incf running-offset obj-free)))
 
          (setf rep (append rep (make-mscx-tuplet-end)))
          (values rep (+ depth 1)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+;; TEMPO
+;;
+
+(defvar *mscx-tempo-map* nil)
+(defvar *mscx-current-measure-index* 0)
+(defvar *mscx-current-offset* 0)
+
+(defun tempo-unit->base-and-dots (unit)
+  "Return MuseScore metronome base name and dot count for UNIT."
+  (cond ((equal unit 4)    (list "Longa" 0))
+        ((equal unit 2)    (list "DoubleWhole" 0))
+        ((equal unit 1)    (list "Whole" 0))
+        ((equal unit 1/2)  (list "Half" 0))
+        ((equal unit 1/4)  (list "Quarter" 0))
+        ((equal unit 1/8)  (list "8th" 0))
+        ((equal unit 1/16) (list "16th" 0))
+        ((equal unit 1/32) (list "32nd" 0))
+        ((equal unit 1/64) (list "64th" 0))
+
+        ;; dotted values
+        ((equal unit 3)    (list "DoubleWhole" 1))
+        ((equal unit 3/2)  (list "Whole" 1))
+        ((equal unit 3/4)  (list "Half" 1))
+        ((equal unit 3/8)  (list "Quarter" 1))
+        ((equal unit 3/16) (list "8th" 1))
+        ((equal unit 3/32) (list "16th" 1))
+        ((equal unit 3/64) (list "32nd" 1))
+
+        (t (list "Quarter" 0))))
+
+(defun tempo-base->met-sym (base)
+  (cond ((string= base "Longa")       "metNoteLongaUp")
+        ((string= base "DoubleWhole") "metNoteDoubleWholeSquare")
+        ((string= base "Whole")       "metNoteWhole")
+        ((string= base "Half")        "metNoteHalfUp")
+        ((string= base "Quarter")     "metNoteQuarterUp")
+        ((string= base "8th")         "metNote8thUp")
+        ((string= base "16th")        "metNote16thUp")
+        ((string= base "32nd")        "metNote32ndUp")
+        ((string= base "64th")        "metNote64thUp")
+        (t "metNoteQuarterUp")))
+
+(defun trim-trailing-zeroes (s)
+  (let ((out (string-right-trim '(#\0) s)))
+    (if (and (> (length out) 0)
+             (char= (char out (1- (length out))) #\.))
+        (subseq out 0 (1- (length out)))
+      out)))
+
+(defun tempo-value->mscx-string (unit bpm)
+  "MuseScore <tempo> value = quarter-notes-per-second scaled by beat unit.
+Examples:
+ 1/4=60  -> 1
+ 1/8=90  -> 0.75
+ 3/8=35  -> 0.875"
+  (trim-trailing-zeroes
+   (format nil "~,6F" (/ (* 4.0 unit bpm) 60.0))))
+
+(defun tempo-text->mscx-string (unit bpm)
+  (multiple-value-bind (base dots)
+      (values-list (tempo-unit->base-and-dots unit))
+    (with-output-to-string (s)
+      (format s "<sym>~A</sym>" (tempo-base->met-sym base))
+      (loop repeat dots do
+            (princ "<sym>metAugmentationDot</sym>" s))
+      (format s "<font face=\"Edwin\"/> = ~A" bpm))))
+
+(defun make-mscx-tempo (unit bpm)
+  (list "<Tempo>"
+        (format nil "<tempo>~A</tempo>"
+                (tempo-value->mscx-string unit bpm))
+        "<followText>1</followText>"
+        (format nil "<text>~A</text>"
+                (tempo-text->mscx-string unit bpm))
+        "</Tempo>"))
+
+(defun measure-beat-unit (measure)
+  "Return the symbolic beat unit used for beat-index addressing in this measure."
+  (/ 1 (om::find-beat-symbol
+        (om::fdenominator (measure-signature measure)))))
+
+(defun tempo-start-event-p (event)
+  (equal (car event) '(0 0)))
+
+(defun normalized-voice-tempo-events (voice)
+  "Always ensure there is a tempo event at (0 0).
+If explicit (0 0) exists, keep it.
+Otherwise use the initial tempo value."
+  (let* ((tempo-data (om::tempo voice))
+         (initial (car tempo-data))
+         (events (copy-list (cadr tempo-data))))
+    (unless (find-if #'tempo-start-event-p events)
+      (push (list '(0 0) initial) events))
+    events))
+
+(defun build-voice-tempo-map (voice measures)
+  "Create alist entries of the form:
+ ((measure-index offset-ratio) unit bpm)"
+  (loop for event in (normalized-voice-tempo-events voice)
+        for pos = (car event)
+        for tempo-spec = (cadr event)
+        for measure-index = (car pos)
+        for beat-index = (cadr pos)
+        for measure = (nth measure-index measures)
+        when measure
+          collect
+          (list (list measure-index
+                      (* beat-index (measure-beat-unit measure)))
+                (car tempo-spec)
+                (cadr tempo-spec))))
+
+(defun current-tempo-entry ()
+  (find (list *mscx-current-measure-index* *mscx-current-offset*)
+        *mscx-tempo-map*
+        :test #'equal
+        :key #'car))
+
+(defun current-tempo-as-mscx ()
+  (let ((entry (current-tempo-entry)))
+    (when entry
+      (make-mscx-tempo (cadr entry) (caddr entry)))))
 
 
 ;;;
@@ -1111,12 +1248,17 @@ Only basic chord/note content is preserved."
                       (format nil "<sigD>~D</sigD>" (cadr signature))
                       "</TimeSig>"))))
 
-     (loop for obj in inside
-           append
-           (let* ((dur-obj-noire (/ (om::extent obj) (om::qvalue obj)))
-                  (factor (/ (* 1/4 dur-obj-noire) real-beat-val)))
-             (cons-mscx-expr obj :free (* symb-beat-val factor)
-				 :approx approx :part part)))
+     (let ((running-offset 0))
+       (loop for obj in inside
+             append
+             (let* ((dur-obj-noire (/ (om::extent obj) (om::qvalue obj)))
+                    (factor (/ (* 1/4 dur-obj-noire) real-beat-val))
+                    (obj-free (* symb-beat-val factor)))
+               (prog1
+                   (let ((*mscx-current-offset* running-offset))
+                     (cons-mscx-expr obj :free obj-free
+                                     :approx approx :part part))
+                 (incf running-offset obj-free)))))
 
      "<BarLine>"
      "<subtype>normal</subtype>"
@@ -1128,12 +1270,17 @@ Only basic chord/note content is preserved."
 (defmethod cons-mscx-expr ((self om::voice) &key free (key '(G 2)) (approx 2) part)
   (let ((voicenum part)
         (measures (om::inside self)))
-    (list
-     (format nil "<Staff id=\"~D\">" voicenum)
-     (loop for mes in measures
-           for i = 1 then (+ i 1)
-           collect (cons-mscx-expr mes :free i :key key :approx approx :part part))
-     "</Staff>")))
+    (let ((*mscx-tempo-map* (build-voice-tempo-map self measures)))
+      (list
+       (format nil "<Staff id=\"~D\">" voicenum)
+       (loop for mes in measures
+             for i = 1 then (+ i 1)
+             for measure-index = 0 then (+ measure-index 1)
+             collect
+             (let ((*mscx-current-measure-index* measure-index)
+                   (*mscx-current-offset* 0))
+               (cons-mscx-expr mes :free i :key key :approx approx :part part)))
+       "</Staff>"))))
 
 
 (defmethod cons-mscx-expr ((self om::poly) &key free (key '((G 2))) (approx 2) part)
