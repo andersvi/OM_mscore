@@ -70,6 +70,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -77,6 +78,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>ord</text>
 				</StaffText>
@@ -421,6 +427,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -428,6 +435,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>dedillo</text>
 				</StaffText>
@@ -792,6 +804,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -799,6 +812,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>hit_body</text>
 				</StaffText>
@@ -1162,6 +1180,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -1169,6 +1188,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>bottle</text>
 				</StaffText>
@@ -1513,13 +1537,19 @@
 			<Measure>
 			<voice>
 					<Clef>
-					<concertClefType>G</concertClefType>
-					<transposingClefType>G</transposingClefType>
+					<isHeader>1</isHeader>
+					<concertClefType>G8vb</concertClefType>
+					<transposingClefType>G8vb</transposingClefType>
 					</Clef>
 					<TimeSig>
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<PlayTechAnnotation>
 				<playTechType>pizzicato</playTechType>
 				<text>pizz.</text>
@@ -1764,13 +1794,19 @@
 			<Measure>
 			<voice>
 					<Clef>
-					<concertClefType>G</concertClefType>
-					<transposingClefType>G</transposingClefType>
+					<isHeader>1</isHeader>
+					<concertClefType>F</concertClefType>
+					<transposingClefType>F</transposingClefType>
 					</Clef>
 					<TimeSig>
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>ord</text>
 				</StaffText>
@@ -2134,6 +2170,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -2141,6 +2178,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>flatt_ord</text>
 				</StaffText>
@@ -2504,13 +2546,19 @@
 			<Measure>
 			<voice>
 					<Clef>
-					<concertClefType>G</concertClefType>
-					<transposingClefType>G</transposingClefType>
+					<isHeader>1</isHeader>
+					<concertClefType>C4</concertClefType>
+					<transposingClefType>C4</transposingClefType>
 					</Clef>
 					<TimeSig>
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<StaffText>
 				<text>flatt</text>
 				</StaffText>

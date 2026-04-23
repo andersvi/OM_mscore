@@ -15,13 +15,22 @@
 			<voice>
 					<Clef>
 					<isHeader>1</isHeader>
-					<concertClefType>C3</concertClefType>
-					<transposingClefType>C3</transposingClefType>
+					<concertClefType>G</concertClefType>
+					<transposingClefType>G</transposingClefType>
 					</Clef>
 					<TimeSig>
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>5</actualNotes>
+				<baseNote>quarter</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>5</text>
+				</Number>
+				</Tuplet>
 				<Tempo>
 				<tempo>1</tempo>
 				<followText>1</followText>
@@ -32,7 +41,7 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -40,169 +49,18 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+				<velocity>80</velocity>
 				</Note>
 				</Chord>
-				<Tempo>
-				<tempo>0.916667</tempo>
-				<followText>1</followText>
-				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 55</text>
-				</Tempo>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-					<TimeSig>
-					<sigN>7</sigN>
-					<sigD>4</sigD>
-					</TimeSig>
 				<Tuplet>
-				<normalNotes>7</normalNotes>
-				<actualNotes>10</actualNotes>
-				<baseNote>quarter</baseNote>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
 				<Number>
 				<style>tuplet</style>
-				<text>10</text>
+				<text>3</text>
 				</Number>
 				</Tuplet>
-				<Tempo>
-				<tempo>1.166667</tempo>
-				<followText>1</followText>
-				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 70</text>
-				</Tempo>
-				<Chord>
-				<BeamMode>begin</BeamMode>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>half</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<dots>1</dots>
-				<durationType>half</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>whole</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<endTuplet/>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-					<TimeSig>
-					<sigN>4</sigN>
-					<sigD>4</sigD>
-					</TimeSig>
-				<Tempo>
-				<tempo>0.75</tempo>
-				<followText>1</followText>
-				<text><sym>metNote8thUp</sym><font face="Edwin"/> = 90</text>
-				</Tempo>
-				<Chord>
-				<durationType>whole</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-				<Tempo>
-				<tempo>0.875</tempo>
-				<followText>1</followText>
-				<text><sym>metNoteQuarterUp</sym><sym>metAugmentationDot</sym><font face="Edwin"/> = 35</text>
-				</Tempo>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
-					<TimeSig>
-					<sigN>3</sigN>
-					<sigD>8</sigD>
-					</TimeSig>
 				<Chord>
 				<BeamMode>begin</BeamMode>
 				<durationType>eighth</durationType>
@@ -213,7 +71,7 @@
 				</Note>
 				</Chord>
 				<Chord>
-				<BeamMode>no</BeamMode>
+				<BeamMode>mid</BeamMode>
 				<durationType>eighth</durationType>
 				<Note>
 				<pitch>60</pitch>
@@ -221,11 +79,6 @@
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
-				<Tempo>
-				<tempo>0.275</tempo>
-				<followText>1</followText>
-				<text><sym>metNote8thUp</sym><font face="Edwin"/> = 33</text>
-				</Tempo>
 				<Chord>
 				<BeamMode>end</BeamMode>
 				<durationType>eighth</durationType>
@@ -235,6 +88,48 @@
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
+				<endTuplet/>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Rest>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				</Rest>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<endTuplet/>
 			<BarLine>
 			<subtype>normal</subtype>
 			</BarLine>
@@ -242,10 +137,96 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>half</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>7</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>7</text>
+				</Number>
+				</Tuplet>
+				<Tempo>
+				<tempo>0.55</tempo>
+				<followText>1</followText>
+				<text><sym>metNote8thUp</sym><sym>metAugmentationDot</sym><font face="Edwin"/> = 44</text>
+				</Tempo>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
 				<Rest>
-				<dots>1</dots>
+				<BeamMode>mid</BeamMode>
 				<durationType>quarter</durationType>
 				</Rest>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<Chord>
+				<durationType>half</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>26</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>half</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>80</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
 			<BarLine>
 			<subtype>normal</subtype>
 			</BarLine>

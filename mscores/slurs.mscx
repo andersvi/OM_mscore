@@ -14,6 +14,7 @@
 			<Measure>
 			<voice>
 					<Clef>
+					<isHeader>1</isHeader>
 					<concertClefType>G</concertClefType>
 					<transposingClefType>G</transposingClefType>
 					</Clef>
@@ -21,6 +22,11 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
 				<Chord>
 				<durationType>half</durationType>
 				<Spanner type="Slur">
@@ -28,7 +34,6 @@
 				<next>
 					<location>
 					<measures>1</measures>
-					<fractions>1/2</fractions>
 					</location>
 				</next>
 				</Spanner>
@@ -37,6 +42,7 @@
 				<next>
 					<location>
 					<measures>1</measures>
+					<fractions>1/2</fractions>
 					</location>
 				</next>
 				</Spanner>

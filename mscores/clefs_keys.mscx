@@ -1,0 +1,1074 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<museScore version="4.60">
+  <programVersion>4.6.5</programVersion>
+  <programRevision>653f38d</programRevision>
+  <Score>
+    <eid>6LF88bb4JQO_7fXCuGuX0TE</eid>
+    <Division>480</Division>
+    <showInvisible>1</showInvisible>
+    <showUnprintable>1</showUnprintable>
+    <showFrames>1</showFrames>
+    <showMargins>0</showMargins>
+    <open>1</open>
+    <metaTag name="arranger"></metaTag>
+    <metaTag name="audioComUrl"></metaTag>
+    <metaTag name="composer">Composer / arranger</metaTag>
+    <metaTag name="copyright"></metaTag>
+    <metaTag name="creationDate">2026-04-18</metaTag>
+    <metaTag name="lyricist"></metaTag>
+    <metaTag name="movementNumber"></metaTag>
+    <metaTag name="movementTitle"></metaTag>
+    <metaTag name="platform">Linux</metaTag>
+    <metaTag name="source"></metaTag>
+    <metaTag name="sourceRevisionId"></metaTag>
+    <metaTag name="subtitle">Subtitle</metaTag>
+    <metaTag name="translator"></metaTag>
+    <metaTag name="workNumber"></metaTag>
+    <metaTag name="workTitle">Untitled score</metaTag>
+    <Order id="orchestra">
+      <name>Orchestra</name>
+      <instrument id="percussion">
+        <family id="other-percussion">Other Percussion</family>
+        </instrument>
+      <instrument id="piano">
+        <family id="keyboards">Keyboards</family>
+        </instrument>
+      <instrument id="piccolo">
+        <family id="flutes">Flutes</family>
+        </instrument>
+      <section id="woodwind" brackets="true" barLineSpan="true" thinBrackets="true">
+        <family>flutes</family>
+        <family>oboes</family>
+        <family>clarinets</family>
+        <family>saxophones</family>
+        <family>bassoons</family>
+        <unsorted group="woodwinds"/>
+        </section>
+      <section id="brass" brackets="true" barLineSpan="true" thinBrackets="true">
+        <family>horns</family>
+        <family>trumpets</family>
+        <family>cornets</family>
+        <family>flugelhorns</family>
+        <family>trombones</family>
+        <family>tubas</family>
+        <unsorted group="brass"/>
+        </section>
+      <section id="timpani" brackets="true" barLineSpan="true" thinBrackets="true">
+        <family>timpani</family>
+        </section>
+      <section id="percussion" brackets="true" barLineSpan="true" thinBrackets="true">
+        <family>keyboard-percussion</family>
+        <unsorted group="pitched-percussion"/>
+        <family>drums</family>
+        <family>unpitched-metal-percussion</family>
+        <family>unpitched-wooden-percussion</family>
+        <family>other-percussion</family>
+        <unsorted group="unpitched-percussion"/>
+        </section>
+      <family>keyboards</family>
+      <family>harps</family>
+      <family>organs</family>
+      <family>synths</family>
+      <unsorted/>
+      <soloists/>
+      <section id="voices" brackets="true" barLineSpan="false" thinBrackets="true">
+        <family>voices</family>
+        <family>voice-groups</family>
+        </section>
+      <section id="strings" brackets="true" barLineSpan="true" thinBrackets="true">
+        <family>orchestral-strings</family>
+        </section>
+      </Order>
+    <Part id="1">
+      <Staff>
+        <eid>FBJjoAff93K_GTzUYhhEa5P</eid>
+        <StaffType group="pitched">
+          <name>stdNormal</name>
+          </StaffType>
+        <defaultConcertClef>G8va</defaultConcertClef>
+        <defaultTransposingClef>G</defaultTransposingClef>
+        </Staff>
+      <trackName>Piccolo</trackName>
+      <Instrument id="piccolo">
+        <longName>Piccolo</longName>
+        <shortName>Picc.</shortName>
+        <trackName>Piccolo</trackName>
+        <minPitchP>74</minPitchP>
+        <maxPitchP>108</maxPitchP>
+        <minPitchA>74</minPitchA>
+        <maxPitchA>105</maxPitchA>
+        <transposeDiatonic>7</transposeDiatonic>
+        <transposeChromatic>12</transposeChromatic>
+        <instrumentId>wind.flutes.flute.piccolo</instrumentId>
+        <concertClef>G8va</concertClef>
+        <transposingClef>G</transposingClef>
+        <Channel>
+          <program value="72"/>
+          <synti>Fluid</synti>
+          </Channel>
+        </Instrument>
+      </Part>
+    <Part id="3">
+      <Staff>
+        <eid>5/ABcCgvzuB_3mNmypVRDqO</eid>
+        <StaffType group="percussion">
+          <name>perc5Line</name>
+          <keysig>0</keysig>
+          </StaffType>
+        <defaultClef>PERC</defaultClef>
+        </Staff>
+      <trackName>Percussion</trackName>
+      <Instrument id="percussion">
+        <longName>Percussion</longName>
+        <shortName>Perc.</shortName>
+        <trackName>Mixed Percussion</trackName>
+        <instrumentId>drum.group.set</instrumentId>
+        <useDrumset>1</useDrumset>
+        <percussionPanelColumns>8</percussionPanelColumns>
+        <Drum pitch="27">
+          <head>cross</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Closed Hi-Hat</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="28">
+          <head>cross</head>
+          <line>9</line>
+          <voice>1</voice>
+          <name>Pedal Hi-Hat</name>
+          <stem>2</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>7</panelColumn>
+          </Drum>
+        <Drum pitch="29">
+          <head>xcircle</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Open Hi-Hat</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>6</panelColumn>
+          </Drum>
+        <Drum pitch="30">
+          <head>cross</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Ride Cymbal</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <Drum pitch="31">
+          <head>plus</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Stick Click</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="36">
+          <head>normal</head>
+          <line>7</line>
+          <voice>1</voice>
+          <name>Bass Drum</name>
+          <stem>2</stem>
+          <shortcut>A</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <Drum pitch="37">
+          <head>cross</head>
+          <line>3</line>
+          <voice>0</voice>
+          <name>Snare Rim</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="38">
+          <head>normal</head>
+          <line>3</line>
+          <voice>0</voice>
+          <name>Snare</name>
+          <stem>1</stem>
+          <shortcut>B</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="41">
+          <head>normal</head>
+          <line>6</line>
+          <voice>0</voice>
+          <name>Low Tom</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="43">
+          <head>normal</head>
+          <line>4</line>
+          <voice>0</voice>
+          <name>Mid Tom</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="45">
+          <head>normal</head>
+          <line>2</line>
+          <voice>0</voice>
+          <name>High Tom</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="52">
+          <head>cross</head>
+          <line>5</line>
+          <voice>0</voice>
+          <name>Tam-Tam</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="54">
+          <head>diamond</head>
+          <line>6</line>
+          <voice>0</voice>
+          <name>Tambourine</name>
+          <stem>1</stem>
+          <shortcut>G</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>6</panelColumn>
+          </Drum>
+        <Drum pitch="55">
+          <head>cross</head>
+          <line>-4</line>
+          <voice>0</voice>
+          <name>Splash Cymbal</name>
+          <stem>1</stem>
+          <panelRow>5</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="56">
+          <head>triangle-down</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Cowbell</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>7</panelColumn>
+          </Drum>
+        <Drum pitch="57">
+          <head>cross</head>
+          <line>-2</line>
+          <voice>0</voice>
+          <name>Suspended Cymbal</name>
+          <stem>1</stem>
+          <shortcut>E</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="58">
+          <head>ti</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Vibraslap</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="59">
+          <head>cross</head>
+          <line>4</line>
+          <voice>0</voice>
+          <name>Hand Cymbals</name>
+          <stem>1</stem>
+          <shortcut>F</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="60">
+          <head>normal</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Hi Bongo</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>6</panelColumn>
+          </Drum>
+        <Drum pitch="61">
+          <head>normal</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Lo Bongo</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="62">
+          <head>normal</head>
+          <noteheads>
+            <whole>noteheadXOrnate</whole>
+            <half>noteheadXOrnate</half>
+            <quarter>noteheadXOrnate</quarter>
+            <breve>noteheadXOrnate</breve>
+            </noteheads>
+          <line>1</line>
+          <voice>0</voice>
+          <name>Mute Hi Conga</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="63">
+          <head>normal</head>
+          <line>1</line>
+          <voice>0</voice>
+          <name>Hi Conga</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="64">
+          <head>normal</head>
+          <line>2</line>
+          <voice>0</voice>
+          <name>Lo Conga</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="65">
+          <head>normal</head>
+          <line>5</line>
+          <voice>0</voice>
+          <name>Hi Timbale</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="66">
+          <head>normal</head>
+          <line>7</line>
+          <voice>0</voice>
+          <name>Lo Timbale</name>
+          <stem>1</stem>
+          <panelRow>2</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <Drum pitch="67">
+          <head>triangle-down</head>
+          <line>-2</line>
+          <voice>0</voice>
+          <name>Hi Agogô</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>7</panelColumn>
+          </Drum>
+        <Drum pitch="68">
+          <head>triangle-down</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Lo Agogô</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>6</panelColumn>
+          </Drum>
+        <Drum pitch="69">
+          <head>diamond</head>
+          <line>2</line>
+          <voice>0</voice>
+          <name>Cabasa</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>6</panelColumn>
+          </Drum>
+        <Drum pitch="70">
+          <head>diamond</head>
+          <line>4</line>
+          <voice>0</voice>
+          <name>Maracas</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="71">
+          <head>ti</head>
+          <line>-3</line>
+          <voice>0</voice>
+          <name>Long Whistle</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="72">
+          <head>cross</head>
+          <line>-3</line>
+          <voice>0</voice>
+          <name>Short Whistle</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="73">
+          <head>cross</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Short Güiro</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>5</panelColumn>
+          </Drum>
+        <Drum pitch="74">
+          <head>slashed1</head>
+          <line>-1</line>
+          <voice>0</voice>
+          <name>Long Güiro</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="75">
+          <head>la</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Claves</name>
+          <stem>1</stem>
+          <shortcut>H</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>7</panelColumn>
+          </Drum>
+        <Drum pitch="76">
+          <head>la</head>
+          <line>5</line>
+          <voice>0</voice>
+          <name>Hi Woodblock</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="77">
+          <head>la</head>
+          <line>7</line>
+          <voice>0</voice>
+          <name>Lo Woodblock</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="78">
+          <head>cross</head>
+          <line>8</line>
+          <voice>0</voice>
+          <name>Mute Cuica</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="79">
+          <head>slashed2</head>
+          <line>8</line>
+          <voice>0</voice>
+          <name>Open Cuica</name>
+          <stem>1</stem>
+          <panelRow>4</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <Drum pitch="80">
+          <head>cross</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Mute Triangle</name>
+          <stem>1</stem>
+          <shortcut>D</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>3</panelColumn>
+          </Drum>
+        <Drum pitch="81">
+          <head>triangle-up</head>
+          <line>0</line>
+          <voice>0</voice>
+          <name>Triangle</name>
+          <stem>1</stem>
+          <shortcut>C</shortcut>
+          <panelRow>0</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="82">
+          <head>diamond</head>
+          <line>5</line>
+          <voice>0</voice>
+          <name>Shaker</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>4</panelColumn>
+          </Drum>
+        <Drum pitch="83">
+          <head>triangle-down</head>
+          <line>3</line>
+          <voice>0</voice>
+          <name>Sleigh Bells</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>2</panelColumn>
+          </Drum>
+        <Drum pitch="84">
+          <head>ti</head>
+          <line>2</line>
+          <voice>0</voice>
+          <name>Mark Tree</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <Drum pitch="85">
+          <head>la</head>
+          <line>2</line>
+          <voice>0</voice>
+          <name>Castanets</name>
+          <stem>1</stem>
+          <panelRow>1</panelRow>
+          <panelColumn>7</panelColumn>
+          </Drum>
+        <Drum pitch="86">
+          <head>normal</head>
+          <noteheads>
+            <whole>noteheadSlashX</whole>
+            <half>noteheadSlashX</half>
+            <quarter>noteheadSlashX</quarter>
+            <breve>noteheadSlashX</breve>
+            </noteheads>
+          <line>4</line>
+          <voice>0</voice>
+          <name>Taiko Rim</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>1</panelColumn>
+          </Drum>
+        <Drum pitch="87">
+          <head>slash</head>
+          <line>4</line>
+          <voice>0</voice>
+          <name>Taiko</name>
+          <stem>1</stem>
+          <panelRow>3</panelRow>
+          <panelColumn>0</panelColumn>
+          </Drum>
+        <clef>PERC</clef>
+        <singleNoteDynamics>0</singleNoteDynamics>
+        <Channel>
+          <controller ctrl="0" value="1"/>
+          <controller ctrl="32" value="0"/>
+          <program value="48"/>
+          <synti>Fluid</synti>
+          </Channel>
+        </Instrument>
+      </Part>
+    <Part id="2">
+      <Staff>
+        <eid>F+oHV+mBrxK_5X58elMBc7M</eid>
+        <StaffType group="pitched">
+          <name>stdNormal</name>
+          </StaffType>
+        <bracket type="1" span="2" col="0" visible="1"/>
+        <barLineSpan>1</barLineSpan>
+        </Staff>
+      <Staff>
+        <eid>AYDFAh5RjgK_48v3THQazpM</eid>
+        <StaffType group="pitched">
+          <name>stdNormal</name>
+          </StaffType>
+        <defaultClef>F</defaultClef>
+        </Staff>
+      <trackName>Piano</trackName>
+      <Instrument id="piano">
+        <longName>Piano</longName>
+        <shortName>Pno.</shortName>
+        <trackName>Piano</trackName>
+        <minPitchP>21</minPitchP>
+        <maxPitchP>108</maxPitchP>
+        <minPitchA>21</minPitchA>
+        <maxPitchA>108</maxPitchA>
+        <instrumentId>keyboard.piano</instrumentId>
+        <clef staff="2">F</clef>
+        <Channel>
+          <program value="0"/>
+          <synti>Fluid</synti>
+          </Channel>
+        </Instrument>
+      </Part>
+    <Staff id="1">
+      <VBox>
+        <height>10</height>
+        <eid>lIYcQ8EGutE_hOtPM5JApPO</eid>
+        <Text>
+          <eid>MbizgOZpjJM_r50GFNx1LPC</eid>
+          <style>title</style>
+          <text>Untitled score</text>
+          </Text>
+        <Text>
+          <eid>rIpLpxxEfDF_d7TF2tjAqsJ</eid>
+          <style>subtitle</style>
+          <text>Subtitle</text>
+          </Text>
+        <Text>
+          <eid>RI3jW1ODreB_Q8lap4AcXr</eid>
+          <style>composer</style>
+          <text>Composer / arranger</text>
+          </Text>
+        </VBox>
+      <Measure>
+        <eid>JbRlDwDPUHN_eMVJ8NvZNZJ</eid>
+        <voice>
+          <KeySig>
+            <eid>NPaXcK45U/O_J4mDd0RpVXP</eid>
+            <concertKey>0</concertKey>
+            </KeySig>
+          <TimeSig>
+            <eid>P5UMq0EJWzD_3yEyi/UALYJ</eid>
+            <sigN>4</sigN>
+            <sigD>4</sigD>
+            </TimeSig>
+          <Chord>
+            <eid>E6bxnOAPV/B_FwkkHrizrUC</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>fECkrZ7gZeK_usFZKxTyixN</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>G8va</concertClefType>
+            <transposingClefType>G8va</transposingClefType>
+            <eid>hluD2jdf9TN_N+UKbjyPQ7C</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>uo1P3jvvgmN_UfXMM8eiCWO</eid>
+        <voice>
+          <Chord>
+            <eid>TSBycsmZdfG_JvUNH7f+E+M</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>zFAjzG5mWHI_J6C/RHjOXXO</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>G15ma</concertClefType>
+            <transposingClefType>G15ma</transposingClefType>
+            <eid>RmfwpHcpX+G_w71SyA0XKIN</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>6/65+h+cZ2F_nQYIttgbtZG</eid>
+        <voice>
+          <Chord>
+            <eid>2dchJE71rDB_etuL8Cfo7lE</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>kWx1Ps55cAG_4QW+fNj3uE</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>G8vb</concertClefType>
+            <transposingClefType>G8vb</transposingClefType>
+            <eid>jecHXNhxnKJ_Ie98Hs9PR7K</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>IiDCvk8VxeG_H03+di9HTdL</eid>
+        <voice>
+          <Chord>
+            <eid>C8bKJRGEq9D_akFiBog48jL</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>GZhMERVweRL_8pvFpSXMJ0J</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>C3</concertClefType>
+            <transposingClefType>C3</transposingClefType>
+            <eid>QSEAa7SV3HK_QqRUHphgRoB</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>9f21+KfjE6J_P+y80W3GKgL</eid>
+        <voice>
+          <Chord>
+            <eid>MnKA7B1Na6N_GUQzQjsuiDB</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>pbklH3sHXZK_haJrQjdqmxD</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>C4</concertClefType>
+            <transposingClefType>C4</transposingClefType>
+            <eid>wzE0TN5D5SF_aJ0sw7ulUkI</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>IHjiIxUprVC_L/a/YTEbaLG</eid>
+        <voice>
+          <Chord>
+            <eid>Ha6pFEBDYaN_AT+SHSTnW3K</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>1m0b9kUo2iM_81J9PBuvR4B</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>F</concertClefType>
+            <transposingClefType>F</transposingClefType>
+            <eid>vIu/81d1qBG_FSU3hdbBXXE</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>q34UMwM0CIN_5B3TCX+m29D</eid>
+        <voice>
+          <Chord>
+            <eid>5z99IoCw9wB_ZpgS42ElH2</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>o+2kGi5/+a_kfo52j6QFuN</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>F8va</concertClefType>
+            <transposingClefType>F8va</transposingClefType>
+            <eid>Qh80sLU4qND_hsL07tnVWGB</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>hCYcqqkXgiN_etjvW1wsyJG</eid>
+        <voice>
+          <Chord>
+            <eid>hzkOAE1rtjC_ryrGX+pvBjH</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>+ocwWXwWkOD_3G9rWo+xjBK</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <Clef>
+            <concertClefType>F8vb</concertClefType>
+            <transposingClefType>F8vb</transposingClefType>
+            <eid>qzTCL3sDkcB_EAy56JiOAAC</eid>
+            </Clef>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>TlQbrsqCYGL_gMKdGUne6kC</eid>
+        <voice>
+          <Chord>
+            <eid>wRe5H3yKrUD_JI5rGcaQ/QG</eid>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>qz/3+PQNSZL_GIHv6vrQqaO</eid>
+              <pitch>86</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          </voice>
+        </Measure>
+      </Staff>
+    <Staff id="2">
+      <Measure>
+        <voice>
+          <TimeSig>
+            <eid>Wi1LUZFLnZI_Q5dlcuniYXM</eid>
+            <sigN>4</sigN>
+            <sigD>4</sigD>
+            </TimeSig>
+          <Rest>
+            <eid>iYa1lEj8B5M_eKNXs5ParoL</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>2wO66hGk9CF_OLbGgOv5dZK</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>8x6RfeyjtoN_Q/HQd3beq6M</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>U+inWp17AVN_NcyTaH/VifB</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>VEv/dgBKwcO_YsCi00uEwrN</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>v6EYbn+YV8_QCSTLJucZTE</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>uaqt77eP6BK_M7hrqmQHaMF</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>0jiC0bmlMu_MZLzO4IrzjH</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>Ao4pczLv2VF_CkbODwKA85C</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      </Staff>
+    <Staff id="3">
+      <Measure>
+        <voice>
+          <KeySig>
+            <eid>3E30ET9Sl3H_gnqqSuqP8HL</eid>
+            <concertKey>0</concertKey>
+            </KeySig>
+          <TimeSig>
+            <eid>KX22FlyvVIC_LgWix2UD3XD</eid>
+            <sigN>4</sigN>
+            <sigD>4</sigD>
+            </TimeSig>
+          <Rest>
+            <eid>OUu/04Wtfw_WttCqpop4GI</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>lFmwrHKEXyI_jReubXfUXeG</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>Cfc+1xuhmxF_XGvzcqXa/CJ</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>40oVTif1R4G_lyvJyy+YjGJ</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>CPgAJnAXYUN_xq04pASWulB</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>noibTw5asIN_cbOCqI3ERxH</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>b81+BWcB/jE_19Ew5YRYBzH</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>TycpHO+s5xI_o1iBECeNjrN</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>1G/95wf8bsH_pWsFtmP8qAP</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      </Staff>
+    <Staff id="4">
+      <Measure>
+        <voice>
+          <KeySig>
+            <eid>eDLiIiMbrYC_J0IvKFR+zGM</eid>
+            <concertKey>0</concertKey>
+            </KeySig>
+          <TimeSig>
+            <eid>NUPmoOSKfnI_5APIPN8TuYB</eid>
+            <sigN>4</sigN>
+            <sigD>4</sigD>
+            </TimeSig>
+          <Rest>
+            <eid>PPjreQoCjwP_sNoDmQlyS6J</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>xgZFkmMdLr_TxwntTbZjMP</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>eOZ3S4QceqL_aQERqThJ1eC</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>hY0sEHxSp4B_lXH3ZLL2eJC</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>7nvoblH9XDP_zBRvQJpa39K</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>H6jeBNowFYE_T27lf+B+QGF</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>Qqz0vBOKsCM_okVWKhPmehL</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>XL/YZKBJ33P_nqu4/Bpyu5C</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Rest>
+            <eid>NihwFUoZF2D_nKaDY23Pl+O</eid>
+            <durationType>measure</durationType>
+            <duration>4/4</duration>
+            </Rest>
+          </voice>
+        </Measure>
+      </Staff>
+    </Score>
+  </museScore>

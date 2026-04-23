@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<museScore version="4.60">
+<Score>
+<Division>480</Division>
+	<Part id="1">
+	<Staff>
+	<StaffType group="pitched">
+	<name>stdNormal</name>
+	</StaffType>
+	</Staff>
+	<trackName>Part 1</trackName>
+	</Part>
+	<Staff id="1">
+			<Measure>
+			<voice>
+					<Clef>
+					<isHeader>1</isHeader>
+					<concertClefType>G</concertClefType>
+					<transposingClefType>G</transposingClefType>
+					</Clef>
+					<TimeSig>
+					<sigN>3</sigN>
+					<sigD>4</sigD>
+					</TimeSig>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>7</actualNotes>
+				<baseNote>16th</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>7</text>
+				</Number>
+				</Tuplet>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<dots>1</dots>
+				<durationType>eighth</durationType>
+				<Note>
+				<Spanner type="Tie">
+				<Tie/>
+				<next>
+					<location>
+					<fractions>3/28</fractions>
+					</location>
+				</next>
+				</Spanner>
+				<pitch>64</pitch>
+				<tpc>18</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>7</actualNotes>
+				<baseNote>16th</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>7</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<Spanner type="Tie">
+				<prev>
+					<location>
+					<fractions>-3/28</fractions>
+					</location>
+				</prev>
+				</Spanner>
+				<pitch>64</pitch>
+				<tpc>18</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Rest>
+				<BeamMode>end</BeamMode>
+				<dots>1</dots>
+				<durationType>eighth</durationType>
+				</Rest>
+				<endTuplet/>
+				<Rest>
+				<durationType>quarter</durationType>
+				</Rest>
+			<BarLine>
+			<subtype>normal</subtype>
+			</BarLine>
+			</voice>
+			</Measure>
+	</Staff>
+</Score>
+</museScore>
