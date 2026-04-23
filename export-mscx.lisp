@@ -63,7 +63,6 @@
 ;; the symbols inside tonalite are set in om-package: eg om:do, om::bemol ->
 ;; compare with string= - can compare :keywords
 
-
 (defun om-tonnote->step-string (tonnote)
   (cond ((string-equal tonnote :do)  "C")
         ((string-equal tonnote :re)  "D")
@@ -122,20 +121,21 @@
 ;; CLEFS
 
 (defun clef-sign->mscx-clef (sign &optional line)
-  (let ((name (string-upcase (string sign))))
-    (cond
-      ((and (string= name "C") (= line 1)) "C1")
-      ((and (string= name "C") (= line 3)) "C3")
-      ((and (string= name "C") (= line 4)) "C4")
-      ((string= name "G") "G")
-      ((string= name "G_8") "G8vb")
-      ((string= name "G^8") "G8va")
-      ((string= name "F") "F")
-      ((string= name "F_8") "F8va")
-      ((string= name "EMPTY") "PERC")
-      (t
-       (error "Unsupported OM clef for MSCX export: ~S~@[ line ~A~]"
-              sign line)))))
+  (unless (or (symbolp sign) (stringp sign) (characterp sign))
+    (error "Invalid clef sign: ~S" sign))
+  (cond
+    ((and (string= sign :c) (= line 1)) "C1")
+    ((and (string= sign :c) (= line 3)) "C3")
+    ((and (string= sign :c) (= line 4)) "C4")
+    ((string= sign :g) "G")
+    ((string= sign :g_8) "G8vb")
+    ((string= sign :g^8) "G8va")
+    ((string= sign :f) "F")
+    ((string= sign :f_8) "F8va")
+    ((string= sign :empty) "PERC")
+    (t
+     (error "Unsupported OM clef for MSCX export: ~S~@[ line ~A~]"
+            sign line))))
 
 
 ;;;
