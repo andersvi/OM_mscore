@@ -925,9 +925,9 @@ Only basic chord/note content is preserved."
                    "</Note>")))
      (list "</Chord>"))))
 
-(defgeneric cons-mscx-expr (self &key free key approx part))
+(defgeneric cons-mscx-expr (self &key free clef approx part))
 
-(defmethod cons-mscx-expr ((self om::chord) &key free key (approx 2) part)
+(defmethod cons-mscx-expr ((self om::chord) &key free clef (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
 	 (head-and-pts (mxml::get-head-and-points dur))
 	 (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
@@ -986,7 +986,7 @@ Only basic chord/note content is preserved."
               (list "</Note>"))))
      (list "</Chord>"))))
 
-(defmethod cons-mscx-expr ((self om::rest) &key free key (approx 2) part)
+(defmethod cons-mscx-expr ((self om::rest) &key free clef (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
          (head-and-pts (mxml::get-head-and-points dur))
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
@@ -1003,7 +1003,7 @@ Only basic chord/note content is preserved."
                    (xml-head-to-mscx-duration-type note-head)))
      (list "</Rest>"))))
 
-(defmethod cons-mscx-expr ((self om::group) &key free key (approx 2) part)
+(defmethod cons-mscx-expr ((self om::group) &key free clef (approx 2) part)
   (let* ((durtot (if (listp free) (car free) free))
          (cpt (if (listp free) (cadr free) 0))
          (num (or (om::get-group-ratio self) (om::extent self)))
@@ -1222,7 +1222,7 @@ Otherwise use the initial tempo value."
         (or (null prev)
             (not (same-signature-p measure prev))))))
 
-(defmethod cons-mscx-expr ((self om::measure) &key free (key '(G 2)) (approx 2) part)
+(defmethod cons-mscx-expr ((self om::measure) &key free (clef '(G 2)) (approx 2) part)
   (let* ((mesnum free)
          (inside (om::inside self))
          (tree (om::tree self))
@@ -1235,12 +1235,12 @@ Otherwise use the initial tempo value."
      (remove nil
              (list
               (when (= mesnum 1)
-                (and key
+                (and clef
                      (list "<Clef>"
                            (format nil "<concertClefType>~A</concertClefType>"
-                                   (clef-sign->mscx-clef (car key)))
+                                   (clef-sign->mscx-clef (car clef)))
                            (format nil "<transposingClefType>~A</transposingClefType>"
-                                   (clef-sign->mscx-clef (car key)))
+                                   (clef-sign->mscx-clef (car clef)))
                            "</Clef>")))
               (when (emit-timesig-p self mesnum)
                 (list "<TimeSig>"
@@ -1267,7 +1267,7 @@ Otherwise use the initial tempo value."
      "</voice>"
      "</Measure>")))
 
-(defmethod cons-mscx-expr ((self om::voice) &key free (key '(G 2)) (approx 2) part)
+(defmethod cons-mscx-expr ((self om::voice) &key free (clef '(G 2)) (approx 2) part)
   (let ((voicenum part)
         (measures (om::inside self)))
     (let ((*mscx-tempo-map* (build-voice-tempo-map self measures)))
@@ -1279,11 +1279,11 @@ Otherwise use the initial tempo value."
              collect
              (let ((*mscx-current-measure-index* measure-index)
                    (*mscx-current-offset* 0))
-               (cons-mscx-expr mes :free i :key key :approx approx :part part)))
+               (cons-mscx-expr mes :free i :clef clef :approx approx :part part)))
        "</Staff>"))))
 
 
-(defmethod cons-mscx-expr ((self om::poly) &key free (key '((G 2))) (approx 2) part)
+(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (approx 2) part)
   (let ((voices (om::inside self)))
     (list
      "<museScore version=\"4.60\">"
@@ -1306,18 +1306,18 @@ Otherwise use the initial tempo value."
             "</Part>"))
 
      ;; Staff timelines
-     (if (= 1 (length key))
-         ;; same key for all voices
+     (if (= 1 (length clef))
+         ;; same clef for all voices
          (loop for v in voices
                for i = 1 then (+ i 1)
                append
-               (cons-mscx-expr v :part i :key (car key) :approx approx))
-	 ;; one key per voice
+               (cons-mscx-expr v :part i :clef (car clef) :approx approx))
+	 ;; one clef per voice
 	 (loop for v in voices
                for i = 1 then (+ i 1)
-               for k in key
+               for k in clef
                append
-               (cons-mscx-expr v :part i :key k :approx approx)))
+               (cons-mscx-expr v :part i :clef k :approx approx)))
 
      "</Score>"
      "</museScore>")))
@@ -1338,27 +1338,27 @@ Otherwise use the initial tempo value."
     (loop for line in (mscx::mscx-header) do (format out "~A~%" line))
     (recursive-write-xml out list -1)))
 
-(defmethod mscx-export ((self t) &key keys approx path name) nil)
+(defmethod mscx-export ((self t) &key clefs approx path name) nil)
 
-(defmethod mscx-export ((self voice) &key keys approx path name)
+(defmethod mscx-export ((self voice) &key clefs approx path name)
   (mscx-export (make-instance 'poly :voices self)
-	       :keys keys :approx approx :path path :name name))
+	       :clefs clefs :approx approx :path path :name name))
 
-(defmethod mscx-export ((self poly) &key keys approx path name)
+(defmethod mscx-export ((self poly) &key clefs approx path name)
   (let* ((pathname (or path
                        (om-choose-new-file-dialog
                         :name (or name "om-export.mscx")
                         :directory (or (and name (make-pathname :name nil :type nil :defaults name))
                                        nil)
                         :prompt "Export MuseScore MSCX")))
-         (content (mscx::cons-mscx-expr self :key (or keys '((G 2))) :approx (or approx 2))))
+         (content (mscx::cons-mscx-expr self :clef (or clefs '((G 2))) :approx (or approx 2))))
     (when pathname
       (write-mscx-file content pathname)
       pathname)))
 
-(defmethod! export-mscx ((self t) &optional (keys nil) (approx 2) (path nil))
+(defmethod! export-mscx ((self t) &optional (clefs nil) (approx 2) (path nil))
   :icon 351
-  :indoc '("a VOICE or POLY object" "list of voice keys" "tone subdivision approximation" "a target pathname")
+  :indoc '("a VOICE or POLY object" "list of voice clefs" "tone subdivision approximation" "a target pathname")
   :initvals '(nil '((G 2)) 2 nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
@@ -1371,12 +1371,12 @@ Hack v1:
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
          (clefs (loop for i in staff collect (clefs->xml i))))
-    (mscx-export self :keys (if clefs clefs '((G 2)))
+    (mscx-export self :clefs (if clefs clefs '((G 2)))
                  :approx approx :path path)))
 
-(defmethod! export-mscx ((self voice) &optional (keys nil) (approx 2) (path nil))
+(defmethod! export-mscx ((self voice) &optional (clefs nil) (approx 2) (path nil))
   :icon 351
-  :indoc '("a VOICE or POLY object" "list of voice keys" "tone subdivision approximation" "a target pathname")
+  :indoc '("a VOICE or POLY object" "list of voice clefs" "tone subdivision approximation" "a target pathname")
   :initvals '(nil ((G 2)) 2 nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
@@ -1389,8 +1389,8 @@ Hack v1:
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
          (clefs (list (clefs->xml staff))))
-    (mscx-export self :keys (if clefs clefs '((G 2)))
+    (mscx-export self :clefs (if clefs clefs '((G 2)))
                       :approx approx :path path)))
 
-(defmethod! export-mscx ((self poly) &optional (keys '((G 2))) (approx 2) (path nil))
+(defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (approx 2) (path nil))
   (call-next-method))
