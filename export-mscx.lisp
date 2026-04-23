@@ -121,8 +121,21 @@
 
 ;; CLEFS
 
-(defun clef-sign->mscx-clef (sign)
-  (string-upcase (string sign)))
+(defun clef-sign->mscx-clef (sign &optional line)
+  (let ((name (string-upcase (string sign))))
+    (cond
+      ((and (string= name "C") (= line 1)) "C1")
+      ((and (string= name "C") (= line 3)) "C3")
+      ((and (string= name "C") (= line 4)) "C4")
+      ((string= name "G") "G")
+      ((string= name "G_8") "G8vb")
+      ((string= name "G^8") "G8va")
+      ((string= name "F") "F")
+      ((string= name "F_8") "F8va")
+      ((string= name "EMPTY") "PERC")
+      (t
+       (error "Unsupported OM clef for MSCX export: ~S~@[ line ~A~]"
+              sign line)))))
 
 
 ;;;
@@ -1237,10 +1250,11 @@ Otherwise use the initial tempo value."
               (when (= mesnum 1)
                 (and clef
                      (list "<Clef>"
+                           "<isHeader>1</isHeader>"
                            (format nil "<concertClefType>~A</concertClefType>"
-                                   (clef-sign->mscx-clef (car clef)))
+                                   (clef-sign->mscx-clef (car clef) (cadr clef)))
                            (format nil "<transposingClefType>~A</transposingClefType>"
-                                   (clef-sign->mscx-clef (car clef)))
+                                   (clef-sign->mscx-clef (car clef) (cadr clef)))
                            "</Clef>")))
               (when (emit-timesig-p self mesnum)
                 (list "<TimeSig>"
@@ -1332,6 +1346,36 @@ Otherwise use the initial tempo value."
 
 (in-package :om)
 
+(defun om-staff-symbol->mscx-clef (staff)
+  "Map OM editor staff symbol to legacy clef form (SIGN LINE)
+for simple one-staff MSCX export.
+
+If STAFF is a multi-staff display symbol like GF, GGF, FF, etc.,
+use only the first clef letter."
+  (let ((name (string-upcase (string staff))))
+    (cond
+      ;; explicit simple clefs
+      ((string= name "G") '(g 2))
+      ((string= name "G_8") '(g_8 2))
+      ((string= name "G^8") '(g^8 2))
+      ((string= name "F") '(f 4))
+      ((string= name "F_8") '(f_8 4))
+      ((string= name "C1") '(c 1))
+      ((string= name "C3") '(c 3))
+      ((string= name "C4") '(c 4))
+      ((string= name "EMPTY") '(empty 0))
+
+      ;; multi-staff display symbols -> first staff only
+      ((string= name "GF") '(g 2))
+      ((string= name "GG") '(g 2))
+      ((string= name "FF") '(f 4))
+      ((string= name "GGF") '(g 2))
+      ((string= name "GFF") '(g 2))
+      ((string= name "GGFF") '(g 2))
+
+      (t
+       (error "Unsupported OM staff symbol for MSCX export: ~S" staff)))))
+
 (defun write-mscx-file (list path)
   (with-open-file (out path :direction :output
 			    :if-does-not-exist :create :if-exists :supersede)
@@ -1370,7 +1414,9 @@ Hack v1:
 - velocity only
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
-         (clefs (loop for i in staff collect (clefs->xml i))))
+         (clefs (cond ((null staff) '((G 2)))
+                      ((listp staff) (loop for i in staff collect (om-staff-symbol->mscx-clef i)))
+                      (t (list (om-staff-symbol->mscx-clef staff))))))
     (mscx-export self :clefs (if clefs clefs '((G 2)))
                  :approx approx :path path)))
 
@@ -1388,7 +1434,7 @@ Hack v1:
 - velocity only
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
-         (clefs (list (clefs->xml staff))))
+         (clefs (list (om-staff-symbol->mscx-clef staff))))
     (mscx-export self :clefs (if clefs clefs '((G 2)))
                       :approx approx :path path)))
 
