@@ -228,16 +228,45 @@ FREE is the written duration used for durationType."
     (when head
       (list (format nil "<head>~A</head>" head)))))
 
-(defparameter *om-text-extra-rules*
-  '(("pizz"     :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
-    ("pizz."    :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
-    ("pizzicato" :kind :play-tech :play-tech-type "pizzicato" :text "pizz.")
-    ("arco"     :kind :play-tech :play-tech-type nil         :text "arco")
-    ("legato"   :kind :play-tech :play-tech-type "legato"    :text "legato")
-    ("martele"  :kind :play-tech :play-tech-type "martele"   :text "martelé")
-    ("martelé"  :kind :play-tech :play-tech-type "martele"   :text "martelé")
-    ("harmonic" :kind :play-tech :play-tech-type nil         :text "harmonic")
-    ("harmonics" :kind :play-tech :play-tech-type nil        :text "harmonics")))
+
+;;;
+;;; manual lookup of various 'staff-text-w-playback-mods' in mscore
+;;;
+;;; available ":kind"s - treated w. different tags and structure:
+;;; 
+;;;	:sound-flag
+;;;	:staff-text
+;;;	:play-tech
+;;;
+;;; see #'text-extra-as-mscx below for use
+
+(defparameter *om-text-extra-rules* 
+  ;; for smart playback w some musesounds
+  ;; 
+  ;; manually looking up mappings to various <playingTechnique>  in .mscx files
+
+  '(("pizz"      :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
+    ("pizz."     :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
+    ("pizzicato" :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
+
+    ("arco"      :kind :sound-flag :playing-technique "ordinary_technique" :text "arco")
+    ("ord"       :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
+    ("ordinary"  :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
+
+    ("col legno" :kind :sound-flag :playing-technique "Col Legno" :text "col legno")
+    ("sul pont"  :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
+    ("sul pont." :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
+    ("sul ponticello" :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
+    ("sul tasto" :kind :sound-flag :playing-technique "Sul Tasto" :text "sul tasto"))
+  )
+
+(defun staff-text-sound-flag-as-mscx (text playing-technique)
+  (list "<StaffText>"
+        (format nil "<text>~A</text>" text)
+        "<SoundFlag>"
+        (format nil "<playingTechnique>~A</playingTechnique>" playing-technique)
+        "</SoundFlag>"
+        "</StaffText>"))
 
 (defun normalize-extra-text (s)
   (string-downcase (string-trim '(#\Space #\Tab #\Newline) (or s ""))))
@@ -278,7 +307,11 @@ FREE is the written duration used for durationType."
       ((null extra) nil)
       (rule
        (case (rule-prop rule :kind)
-         (:play-tech
+         (:sound-flag
+	  (staff-text-sound-flag-as-mscx
+	   (or (rule-prop rule :text) raw-text)
+	   (rule-prop rule :playing-technique)))
+	 (:play-tech
           (play-tech-annotation-as-mscx (or (rule-prop rule :text) raw-text)
                                         (rule-prop rule :play-tech-type)))
          (:staff-text
