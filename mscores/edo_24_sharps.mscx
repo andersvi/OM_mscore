@@ -63,7 +63,7 @@
 				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
 				</Accidental>
 				<pitch>62</pitch>
-				<tpc>16</tpc>
+				<tpc>14</tpc>
 				<velocity>100</velocity>
 				</Note>
 				</Chord>
@@ -77,7 +77,11 @@
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<pitch>67</pitch>
+				<Accidental>
+				<role>1</role>
+				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
+				</Accidental>
+				<pitch>68</pitch>
 				<tpc>15</tpc>
 				<velocity>80</velocity>
 				</Note>
@@ -90,7 +94,7 @@
 				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
@@ -110,7 +114,7 @@
 				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
@@ -153,7 +157,7 @@
 				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
 				</Accidental>
 				<pitch>62</pitch>
-				<tpc>16</tpc>
+				<tpc>14</tpc>
 				<velocity>100</velocity>
 				</Note>
 				</Chord>
@@ -180,7 +184,7 @@
 				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
@@ -200,7 +204,7 @@
 				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
@@ -227,7 +231,7 @@
 				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
@@ -247,7 +251,7 @@
 				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
 				</Accidental>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
+				<tpc>13</tpc>
 				<velocity>80</velocity>
 				</Note>
 				</Chord>
