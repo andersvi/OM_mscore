@@ -1714,7 +1714,7 @@ use only the first clef letter."
       pathname)))
 
 
-(defmethod! export-mscx ((self t) &optional (clefs nil) (approx :none) (path nil)
+(defmethod! export-mscx ((self t) &key (clefs nil) (approx :none) (path nil)
 				  (unsupported-microtones :warn) (accidental-family :gould-arrow))
   :icon 351
   :indoc '("a VOICE or POLY object"
@@ -1724,12 +1724,6 @@ use only the first clef letter."
            "unsupported microtone policy"
            "microtonal accidental family")
   :initvals '(nil '((G 2)) :none nil :warn :gould-arrow)
-  :menuins '((nil)
-             (nil)
-             (:none 2 4 8 12 24)
-             (nil)
-             (:warn :mark :ignore :error)
-             (:gould-arrow :stein-zimmermann :wyschnegradsky :persian :turkish :auto))
   :doc "
 Exports <self> to MuseScore MSCX format.
 
@@ -1747,7 +1741,7 @@ Pitch policy:
                       :unsupported-microtones unsupported-microtones
                       :accidental-family accidental-family)))
 
-(defmethod! export-mscx ((self voice) &optional (clefs nil) (approx :none) (path nil)
+(defmethod! export-mscx ((self voice) &key (clefs nil) (approx :none) (path nil)
 				      (unsupported-microtones :warn) (accidental-family :gould-arrow))
   :icon 351
   :indoc '("a VOICE object"
@@ -1757,12 +1751,6 @@ Pitch policy:
            "unsupported microtone policy"
            "microtonal accidental family")
   :initvals '(nil ((G 2)) :none nil :warn :gould-arrow)
-  :menuins '((nil)
-             (nil)
-             (:none 2 4 8 12 24)
-             (nil)
-             (:warn :mark :ignore :error)
-             (:gould-arrow :stein-zimmermann :wyschnegradsky :persian :turkish :auto))
   :doc "
 Exports <self> to MuseScore MSCX format.
 
@@ -1778,7 +1766,7 @@ Pitch policy:
                       :unsupported-microtones unsupported-microtones
                       :accidental-family accidental-family)))
 
-(defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (approx :none) (path nil)
+(defmethod! export-mscx ((self poly) &key (clefs '((G 2))) (approx :none) (path nil)
 				     (unsupported-microtones :warn) (accidental-family :gould-arrow))
   (call-next-method))
 
