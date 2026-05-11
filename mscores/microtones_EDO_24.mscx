@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<museScore version="4.60">
+  <programVersion>4.6.5</programVersion>
+  <programRevision>653f38d</programRevision>
+  <Score>
+    <eid>IQUOij3iE7C_385wIlnU81</eid>
+    <layoutMode>line</layoutMode>
+    <Division>480</Division>
+    <showInvisible>1</showInvisible>
+    <showUnprintable>1</showUnprintable>
+    <showFrames>1</showFrames>
+    <showMargins>0</showMargins>
+    <open>1</open>
+    <metaTag name="arranger"></metaTag>
+    <metaTag name="audioComUrl"></metaTag>
+    <metaTag name="composer"></metaTag>
+    <metaTag name="copyright"></metaTag>
+    <metaTag name="creationDate">2026-05-11</metaTag>
+    <metaTag name="lyricist"></metaTag>
+    <metaTag name="movementNumber"></metaTag>
+    <metaTag name="movementTitle"></metaTag>
+    <metaTag name="platform">Linux</metaTag>
+    <metaTag name="source"></metaTag>
+    <metaTag name="sourceRevisionId"></metaTag>
+    <metaTag name="translator"></metaTag>
+    <metaTag name="workNumber"></metaTag>
+    <metaTag name="workTitle"></metaTag>
+    <Part id="1">
+      <Staff>
+        <eid>PDneOB1TdEO_zrA4IPqWq7E</eid>
+        <StaffType group="pitched">
+          <name>stdNormal</name>
+          </StaffType>
+        </Staff>
+      <trackName>Part 1</trackName>
+      <Instrument id="piano">
+        <trackName></trackName>
+        <instrumentId>keyboard.piano</instrumentId>
+        <Channel>
+          <synti>Fluid</synti>
+          </Channel>
+        </Instrument>
+      </Part>
+    <Staff id="1">
+      <Measure>
+        <eid>CoQ1GfbVrk_knM34up5ZxO</eid>
+        <voice>
+          <Clef>
+            <concertClefType>G</concertClefType>
+            <transposingClefType>G</transposingClefType>
+            <isHeader>1</isHeader>
+            <eid>VUsfpteSE5P_8371dV/2hhH</eid>
+            </Clef>
+          <TimeSig>
+            <eid>1iYysoGRh1E_jZi1lg+FXvM</eid>
+            <sigN>4</sigN>
+            <sigD>4</sigD>
+            </TimeSig>
+          <Tempo>
+            <tempo>1</tempo>
+            <followText>1</followText>
+            <eid>zK20wvdQrWE_l31sogd9AoM</eid>
+            <text><sym>metNoteQuarterUp</sym><font face="Edwin"></font> = 60</text>
+            </Tempo>
+          <Chord>
+            <eid>v2BRRxkaxVO_Wg34IRQcy6M</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>j0qkenqvBjG_TzWbHZu1ypF</eid>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <velocity>100</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>UZaDmaUyp4E_Wxs1rA+TVzK</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>cM4b9Oru38M_zycmsX2tRUK</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneSharpArrowDown</subtype>
+                <eid>TZSOi1RA/aH_KLPyHkrgbaF</eid>
+                </Accidental>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <velocity>100</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>Ry6Ejk0MUIE_aNtCt9F7QBI</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>j3sNLe3zqRG_lEG38odGKKD</eid>
+              <Accidental>
+                <subtype>accidentalSharp</subtype>
+                <eid>V5HnTCIgOyG_8C5R/Tc6T7N</eid>
+                </Accidental>
+              <pitch>61</pitch>
+              <tpc>21</tpc>
+              <velocity>100</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>m1GH/GtyZeB_mgsw4ee3IfM</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>rRohuTipMSG_yvnjHZyWM0N</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneFlatArrowUp</subtype>
+                <eid>K7xdLKK/wZH_/2yh7+j2fo</eid>
+                </Accidental>
+              <Spanner type="Tie">
+                <Tie>
+                  <eid>PuJdf5ZJsrL_v/kkpiUyCED</eid>
+                  </Tie>
+                <next>
+                  <location>
+                    <measures>1</measures>
+                    <fractions>-3/4</fractions>
+                    </location>
+                  </next>
+                </Spanner>
+              <pitch>62</pitch>
+              <tpc>16</tpc>
+              <velocity>100</velocity>
+              </Note>
+            <Note>
+              <eid>M9ts+EP6iDF_Z4BreJ8a8pC</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneSharpArrowDown</subtype>
+                <eid>0PgA8pjjNSN_5awPgP+sQYH</eid>
+                </Accidental>
+              <Spanner type="Tie">
+                <Tie>
+                  <eid>AnjcWjkFnyL_w6m745Kgl0O</eid>
+                  </Tie>
+                <next>
+                  <location>
+                    <measures>1</measures>
+                    <fractions>-3/4</fractions>
+                    </location>
+                  </next>
+                </Spanner>
+              <pitch>74</pitch>
+              <tpc>16</tpc>
+              <velocity>100</velocity>
+              </Note>
+            </Chord>
+          <BarLine>
+            <eid>d9EdqLQlMx_djq9jMJOnXF</eid>
+            </BarLine>
+          </voice>
+        </Measure>
+      <Measure>
+        <eid>HwWaiBvHT4O_G6ejMsKlbkC</eid>
+        <voice>
+          <Chord>
+            <eid>nuNgQ1scfpI_IVNXOcp9pKF</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>Nwn6nkdYGs_WdbxUdpzjII</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneFlatArrowUp</subtype>
+                <eid>YdCciEuELiB_IyxLzp+HDiI</eid>
+                </Accidental>
+              <Spanner type="Tie">
+                <prev>
+                  <location>
+                    <measures>-1</measures>
+                    <fractions>3/4</fractions>
+                    </location>
+                  </prev>
+                </Spanner>
+              <pitch>62</pitch>
+              <tpc>16</tpc>
+              <velocity>100</velocity>
+              </Note>
+            <Note>
+              <eid>xLYxijXMon_q6GL+6g3IhD</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneSharpArrowDown</subtype>
+                <eid>C0Ko620Z6WI_zInVNqG3CsG</eid>
+                </Accidental>
+              <Spanner type="Tie">
+                <prev>
+                  <location>
+                    <measures>-1</measures>
+                    <fractions>3/4</fractions>
+                    </location>
+                  </prev>
+                </Spanner>
+              <pitch>74</pitch>
+              <tpc>16</tpc>
+              <velocity>100</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>oMCjglaamEI_vWQ0eiiSxaB</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>mVnqOUSqFRG_xtNBBF4KZ3O</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneSharpArrowDown</subtype>
+                <eid>i/DCf6uoq3L_3/urt9ulC0B</eid>
+                </Accidental>
+              <pitch>62</pitch>
+              <tpc>16</tpc>
+              <velocity>80</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>ZMG6oQqIwZM_1/SgmJmKuzD</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>W0bm8l+jJLL_nyjBLCnRayK</eid>
+              <Accidental>
+                <subtype>accidentalSharp</subtype>
+                <eid>EQu5t/bgaJF_C44TlA7uRPI</eid>
+                </Accidental>
+              <pitch>63</pitch>
+              <tpc>23</tpc>
+              <velocity>80</velocity>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>gyTic20u9G_GxqNKeSr+oN</eid>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>NDXyO5NhNAB_KE6rEHL6HuE</eid>
+              <Accidental>
+                <role>1</role>
+                <subtype>accidentalQuarterToneFlatArrowUp</subtype>
+                <eid>9imzylDiNxP_dEMPgPKMPqB</eid>
+                </Accidental>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <velocity>80</velocity>
+              </Note>
+            </Chord>
+          <BarLine>
+            <eid>5ITxrFT829K_VhybfYhn8JH</eid>
+            </BarLine>
+          </voice>
+        </Measure>
+      </Staff>
+    </Score>
+  </museScore>
