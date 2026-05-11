@@ -82,11 +82,13 @@ NIL is accepted as preserve-mode too, for robustness in older internal calls."
       (otherwise (warn "~A" msg)))
     msg))
 
+
 (defstruct mscx-written-pitch
   pitch                  ; MuseScore <pitch>, integer MIDI base pitch
   tpc                    ; MuseScore <tpc>
   accidental-subtype     ; MuseScore accidental subtype string, or NIL
-  midic                  ; original OM midic
+  midic                  ; export/rounded midic
+  raw-midic              ; original OM midic
   cents-offset           ; offset from written base pitch, in cents
   spelling-source        ; :tonalite, :approx, :nearest, :fallback
   warning)               ; warning string, or NIL
@@ -199,6 +201,8 @@ MSCX <pitch> must always be an integer."
         14)))
 
 
+
+
 ;;; ACCIDENTAL MAPPINGS
 ;;;
 ;;; found in MuseScore's ACC_LIST - ./src/engraving/dom/accidental.cpp
@@ -301,11 +305,19 @@ This does not claim semantic correctness; it is just a conservative display base
     (multiple-value-bind (step alter) (midi-pc->default-step+alter pc)
       (values step alter (step+alter-to-tpc step alter)))))
 
+(defun mscx-export-midic (midic approx)
+  "Return MIDIC rounded for MSCX export according to APPROX.
+APPROX :none or NIL means no rounding."
+  (if (or (null approx) (eql approx :none))
+      midic
+      (om::approx-m midic approx)))
+
 (defun note-to-mscx-written-pitch (note &key (approx :none) (unsupported-microtones :warn)
                                          (accidental-family *mscx-accidental-family*))
   "Return MSCX-WRITTEN-PITCH for NOTE.
 APPROX :NONE means preserve/editor-driven mode."
-  (let* ((midic (om::midic note)))
+  (let* ((raw-midic (om::midic note))
+	 (midic (mscx-export-midic raw-midic approx)))
     (multiple-value-bind (step alter tpc) (note-tonalite-step+alter+tpc note)
       (let ((source :tonalite))
         (unless tpc
@@ -313,9 +325,9 @@ APPROX :NONE means preserve/editor-driven mode."
               (progn
                 (setf source :nearest)
                 (multiple-value-setq (step alter tpc) (nearest-note-step+alter+tpc note)))
-            (progn
-              (setf source :approx)
-              (multiple-value-setq (step alter tpc) (approx-note-step+alter+tpc note approx)))))
+              (progn
+		(setf source :approx)
+		(multiple-value-setq (step alter tpc) (approx-note-step+alter+tpc note approx)))))
 
         (let* ((base-midi (round (written-base-midi-pitch midic step alter)))
                (cents-offset (cents-offset-from-base midic base-midi))
@@ -333,10 +345,10 @@ APPROX :NONE means preserve/editor-driven mode."
 
           (when (and (eq source :nearest) (not (cents-close-p cents-offset 0)))
             (let ((msg
-                   (mscx-export-warning
-                    unsupported-microtones
-                    "MSCX export: no OM tonalite/editor spelling found for microtonal note midic=~A. Used nearest fallback spelling: pitch=~A, tpc=~A, offset=~,3F cents."
-                    midic base-midi tpc cents-offset)))
+                    (mscx-export-warning
+                     unsupported-microtones
+                     "MSCX export: no OM tonalite/editor spelling found for microtonal note midic=~A. Used nearest fallback spelling: pitch=~A, tpc=~A, offset=~,3F cents."
+                     midic base-midi tpc cents-offset)))
               (setf warning (or warning msg))))
 
           (make-mscx-written-pitch :pitch base-midi :tpc tpc :accidental-subtype accidental-subtype
@@ -1714,16 +1726,16 @@ use only the first clef letter."
       pathname)))
 
 
-(defmethod! export-mscx ((self t) &key (clefs nil) (approx :none) (path nil)
+(defmethod! export-mscx ((self t) &key (path nil) (clefs nil) (approx 4) 
 				  (unsupported-microtones :warn) (accidental-family :gould-arrow))
   :icon 351
   :indoc '("a VOICE or POLY object"
-           "list of voice clefs"
-           "fallback pitch approximation, or :none"
            "a target pathname"
+	   "list of voice clefs"
+           "fallback pitch approximation, or :none"
            "unsupported microtone policy"
            "microtonal accidental family")
-  :initvals '(nil '((G 2)) :none nil :warn :gould-arrow)
+  :initvals '(nil nil '((G 2)) 4 :warn :gould-arrow)
   :doc "
 Exports <self> to MuseScore MSCX format.
 
@@ -1741,16 +1753,17 @@ Pitch policy:
                       :unsupported-microtones unsupported-microtones
                       :accidental-family accidental-family)))
 
-(defmethod! export-mscx ((self voice) &key (clefs nil) (approx :none) (path nil)
+(defmethod! export-mscx ((self voice) &key (path nil) (clefs nil) (approx 4) 
 				      (unsupported-microtones :warn) (accidental-family :gould-arrow))
   :icon 351
   :indoc '("a VOICE object"
-           "list of voice clefs"
-           "fallback pitch approximation, or :none"
            "a target pathname"
+	   "list of voice clefs"
+           "fallback pitch approximation, or :none"
+           
            "unsupported microtone policy"
            "microtonal accidental family")
-  :initvals '(nil ((G 2)) :none nil :warn :gould-arrow)
+  :initvals '(nil nil '((G 2)) 4 :warn :gould-arrow)
   :doc "
 Exports <self> to MuseScore MSCX format.
 
@@ -1766,7 +1779,7 @@ Pitch policy:
                       :unsupported-microtones unsupported-microtones
                       :accidental-family accidental-family)))
 
-(defmethod! export-mscx ((self poly) &key (clefs '((G 2))) (approx :none) (path nil)
+(defmethod! export-mscx ((self poly) &key (path nil) (clefs nil) (approx 4) 
 				     (unsupported-microtones :warn) (accidental-family :gould-arrow))
   (call-next-method))
 
