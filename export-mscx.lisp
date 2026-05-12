@@ -107,15 +107,249 @@
     (and name
          (cdr (assoc name *mscx-tpc-table* :test #'string=)))))
 
-(defun note-to-mscx-tpc (note approx)
-  (let* ((ton (om::tonalite note))
-         (tpc-from-tonalite (and ton (om-tonalite-to-tpc ton))))
-    (or tpc-from-tonalite
-        (let* ((note-values (mxml::mc->xmlvalues (om::midic note) approx))
-               (step (nth 1 note-values))
-               (alteration (nth 2 note-values)))
-          (step+alter-to-tpc step alteration))
-        14)))
+;;; ----------------------------------------------------------------------
+;;; OM scale notation -> MSCX note pitch data
+;;;
+;;; Policy:
+;;; - MSCX export does not quantize pitch notation by itself.
+;;; - It uses the OM object's own tonalite/approx and OM's scale tables.
+;;; - Playback/tuning precision is not the priority here; notation is.
+;;; ----------------------------------------------------------------------
+
+(defparameter *mscx-current-approx* 2
+  "Dynamically bound fallback approx while exporting a voice/poly/chord.
+The public export API should not expose this as an argument.")
+
+(defparameter *om-line->mscx-step*
+  '((0 . "C")
+    (1 . "D")
+    (2 . "E")
+    (3 . "F")
+    (4 . "G")
+    (5 . "A")
+    (6 . "B")
+    (7 . "C")))
+
+(defparameter *mscx-step-semitone*
+  '(("C" . 0)
+    ("D" . 2)
+    ("E" . 4)
+    ("F" . 5)
+    ("G" . 7)
+    ("A" . 9)
+    ("B" . 11)))
+
+(defun mscx-safe-approx (obj &optional (fallback *mscx-current-approx*))
+  "Try to read OM approx from OBJ or OBJ's tonalite.
+Return FALLBACK if OBJ does not support approx."
+  (or (ignore-errors (om::approx obj))
+      (ignore-errors
+        (let ((ton (om::tonalite obj)))
+          (and ton (om::approx ton))))
+      fallback
+      2))
+
+(defun om-note-scale-notation (note)
+  "Return plist with OM scale spelling for NOTE.
+
+The relevant values are:
+  :midic
+  :approx
+  :line
+  :alteration
+  :up-octave
+  :scale
+
+This follows OM's own get-current-scale/give-alteration logic."
+  (let* ((midic (om::midic note))
+         (approx (mscx-safe-approx note))
+         (scale (om::get-current-scale approx))
+         (alt-data (om::give-alteration scale midic)))
+    (list :midic midic
+          :approx approx
+          :scale scale
+          :line (first alt-data)
+          :alteration (second alt-data)
+          :up-octave (third alt-data))))
+
+(defun om-alteration-key (alt)
+  "Return a stable key for comparing OM alteration objects.
+OM accidentals may be chars, symbols, strings, lists, or font glyph objects.
+Use STRING as a pragmatic comparison layer."
+  (cond
+    ((null alt) nil)
+    ((and (listp alt) (null alt)) nil)
+    ((characterp alt) (string alt))
+    (t (format nil "~A" alt))))
+
+(defun om-alt= (a b)
+  (equal (om-alteration-key a)
+         (om-alteration-key b)))
+
+(defun om-alt-member (alt list)
+  (member alt list :test #'om-alt=))
+
+(defun om-alt-standard-alteration (alt)
+  "Return conventional alteration for TPC: -2, -1, 0, 1, 2."
+  (let ((notation (om-alteration-mscx-notation alt)))
+    (cond
+      ((null alt) 0)
+
+      ((om-alt= alt (om::diese)) 1)
+      ((om-alt= alt #\#) 1)
+      ((om-alt= alt (om::bemol)) -1)
+
+      (notation
+       (getf notation :std-alt))
+
+      ((and (consp alt)
+            (= (length alt) 2)
+            (every #'(lambda (x)
+                       (or (om-alt= x (om::diese))
+                           (om-alt= x #\#)))
+                   alt))
+       2)
+
+      ((and (consp alt)
+            (= (length alt) 2)
+            (every #'(lambda (x)
+                       (om-alt= x (om::bemol)))
+                   alt))
+       -2)
+
+      (t 0))))
+
+
+(defparameter *om-alteration->mscx-notation*
+  '((#\+ . (:std-alt 0 :accidental "accidentalQuarterToneSharpStein"))
+    (#\0 . (:std-alt 0 :accidental "accidentalThreeQuarterTonesSharpStein"))
+
+    (#\§ . (:std-alt 0 :accidental "accidentalNaturalOneArrowUp"))
+    (#\¢ . (:std-alt 0 :accidental "accidentalNaturalOneArrowDown"))
+    (#\¬ . (:std-alt 0 :accidental "accidentalNaturalTwoArrowsDown"))
+
+    ;; sharp-based HE/EDO symbols
+    (#\£ . (:std-alt 1 :accidental "accidentalSharpOneArrowDown"))
+    (#\¨ . (:std-alt 1 :accidental "accidentalSharpOneArrowUp"))
+    (#\² . (:std-alt 1 :accidental "accidentalSharpTwoArrowsUp"))
+    (#\À . (:std-alt 1 :accidental "accidentalSharpTwoArrowsDown")))
+
+
+  "Mapping from OM alteration glyphs to MuseScore notation data.
+
+:std-alt is the conventional chromatic base alteration used for pitch/TPC:
+  -1 flat, 0 natural, 1 sharp, etc.
+
+:accidental is the MuseScore accidental subtype written as <Accidental>.")
+
+
+(defun om-alteration-mscx-notation (alt)
+  "Return plist (:std-alt ... :accidental ...) for OM alteration ALT.
+Returns NIL if ALT is not explicitly mapped here."
+  (cdr (assoc alt *om-alteration->mscx-notation*
+              :test #'om-alt=)))
+
+
+(defun om-alteration->mscx-accidental (alt)
+  "Map an OM alteration object to a MuseScore accidental subtype string."
+  (let ((notation (om-alteration-mscx-notation alt)))
+    (cond
+      ((null alt) nil)
+      ((om-alt= alt (om::diese)) nil)
+      ((om-alt= alt #\#) nil)
+      ((om-alt= alt (om::bemol)) nil)
+      (notation (getf notation :accidental))
+      (t
+       (warn "MSCX export: no MuseScore accidental mapping for OM alteration ~S / key ~S."
+             alt (om-alteration-key alt))
+       nil))))
+
+(defun om-line->mscx-step (line)
+  (or (cdr (assoc line *om-line->mscx-step*))
+      "C"))
+
+(defun mscx-written-midi-from-step (midic step alteration up-octave)
+  "Return MSCX <pitch> for the written note base.
+
+MIDIC is OM midicent, where 6000 is C4 / MIDI 60.
+STEP is the written diatonic step.
+ALTERATION is only the conventional chromatic alteration:
+  -2 double flat
+  -1 flat
+   0 natural / microtonal accidental handled separately
+   1 sharp
+   2 double sharp
+
+Microtonal accidentals must not be folded into <pitch>."
+  (let* ((om-octave (floor midic 1200))
+         ;; OM 6000 = C4, so floor(6000/1200)=5 but written octave is 4.
+         (written-octave (+ (- om-octave 1) (or up-octave 0)))
+         (step-semi (or (cdr (assoc step *mscx-step-semitone* :test #'string=)) 0))
+         (semi (+ step-semi alteration)))
+    (+ (* (+ written-octave 1) 12) semi)))
+
+
+(defun note-to-mscx-pitch-data (note)
+  "Return plist for MSCX note export:
+  :pitch
+  :tpc
+  :accidental
+  :step
+  :line
+  :alteration
+  :approx "
+  (let* ((notation (om-note-scale-notation note))
+         (midic (getf notation :midic))
+         (line (getf notation :line))
+         (alt (getf notation :alteration))
+         (up-octave (getf notation :up-octave))
+         (approx (getf notation :approx))
+         (step (om-line->mscx-step line))
+         (std-alt (om-alt-standard-alteration alt))
+         (tpc (or (step+alter-to-tpc step std-alt)
+                  (let ((ton (om::tonalite note)))
+                    (and ton (om-tonalite-to-tpc ton)))
+                  14))
+	 (pitch (mscx-written-midi-from-step midic step std-alt up-octave))
+	 (pitch (mscx-written-midi-from-step midic step std-alt up-octave))
+         (accidental (om-alteration->mscx-accidental alt)))
+    (list :pitch pitch
+          :tpc tpc
+          :accidental accidental
+          :step step
+          :line line
+          :alteration alt
+          :approx approx)))
+
+
+(defun note-to-mscx-tpc (note &optional ignored-approx)
+  "Compatibility wrapper while refactoring.  Do not use in new code."
+  (declare (ignore ignored-approx))
+  (getf (note-to-mscx-pitch-data note) :tpc))
+
+(defun mscx-note-accidental-element (subtype)
+  (when subtype
+    (list "<Accidental>"
+          (format nil "<subtype>~A</subtype>" subtype)
+          "</Accidental>")))
+
+(defun debug-om-note-mscx-notation (note)
+  "REPL helper for checking OM -> MSCX spelling before exporting whole scores."
+  (let* ((pdata (note-to-mscx-pitch-data note)))
+    (format t "~&midic: ~A~%" (om::midic note))
+    (format t "approx: ~A~%" (getf pdata :approx))
+    (format t "line: ~A  step: ~A~%" (getf pdata :line) (getf pdata :step))
+    (format t "OM alteration: ~S  key: ~S~%"
+            (getf pdata :alteration)
+            (om-alteration-key (getf pdata :alteration)))
+    (format t "MSCX pitch: ~A  tpc: ~A  accidental: ~A~%"
+            (getf pdata :pitch)
+            (getf pdata :tpc)
+            (getf pdata :accidental))
+    pdata))
+
+(debug-om-note-mscx-notation (om::mki 'om::note :midic 6022))
+
 
 
 ;; CLEFS
@@ -953,84 +1187,96 @@ Computed only from preceding chords in the same measure."
   "Export one OM grace-chord as a MuseScore acciaccatura.
 Grace notes are emitted without extras, beams, ties, slurs, or text.
 Only basic chord/note content is preserved."
-  (let* ((inside (om::inside self))
-         (duration-type (mscx-grace-duration-type-from-count (or group-size 1))))
-    (append
-     (list "<Chord>"
-           (format nil "<durationType>~A</durationType>" duration-type)
-           "<acciaccatura/>")
-     (loop for note in inside
-           append
-           (let* ((midi (om-midic-to-midi (om::midic note)))
-                  (tpc (note-to-mscx-tpc note approx))
-                  (vel (om::get-object-vel note)))
-             (list "<Note>"
-                   (format nil "<pitch>~D</pitch>" midi)
-                   (format nil "<tpc>~D</tpc>" tpc)
-                   (format nil "<velocity>~D</velocity>" vel)
-                   "</Note>")))
-     (list "</Chord>"))))
+  (let ((*mscx-current-approx* (mscx-safe-approx self approx)))
+    (let* ((inside (om::inside self))
+           (duration-type (mscx-grace-duration-type-from-count (or group-size 1))))
+      (append
+       (list "<Chord>"
+             (format nil "<durationType>~A</durationType>" duration-type)
+             "<acciaccatura/>")
+       (loop for note in inside
+             append
+     
+	     (let* ((pdata (note-to-mscx-pitch-data note))
+		    (midi (getf pdata :pitch))
+		    (tpc (getf pdata :tpc))
+		    (accidental (getf pdata :accidental))
+		    (vel (om::get-object-vel note)))
+	       (append
+		(list "<Note>"
+		      (format nil "<pitch>~D</pitch>" midi)
+		      (format nil "<tpc>~D</tpc>" tpc)
+		      (format nil "<velocity>~D</velocity>" vel))
+		(mscx-note-accidental-element accidental)
+		(list "</Note>"))))
+     
+       (list "</Chord>")))))
 
 (defgeneric cons-mscx-expr (self &key free clef approx part))
 
 (defmethod cons-mscx-expr ((self om::chord) &key free clef (approx 2) part)
-  (let* ((dur (if (listp free) (car free) free))
-	 (head-and-pts (mxml::get-head-and-points dur))
-	 (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
-	 (nbpoints (cadr head-and-pts))
-	 (beam-mode (mscx-beam-mode self))
-	 (inside (om::inside self))
-	 (tie-spanner (mscx-tie-spanner self free))
-	 (slur-spanners (mscx-slur-spanners self))
-	 (text-extra (text-extra-as-mscx self))
-	 (vel-extra (vel-extra-as-mscx self))
-	 (char-extra (char-extras-as-mscx self))
-	 (grace-notes-obj (and (fboundp 'om::gnotes) (om::gnotes self)))
-	 (graces (and grace-notes-obj
-		      (ignore-errors (om::glist grace-notes-obj))))
-         (group-size (length graces)))
-    (append
-     (current-tempo-as-mscx)
+  (let ((*mscx-current-approx* (mscx-safe-approx self approx)))
+    (let* ((dur (if (listp free) (car free) free))
+	   (head-and-pts (mxml::get-head-and-points dur))
+	   (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
+	   (nbpoints (cadr head-and-pts))
+	   (beam-mode (mscx-beam-mode self))
+	   (inside (om::inside self))
+	   (tie-spanner (mscx-tie-spanner self free))
+	   (slur-spanners (mscx-slur-spanners self))
+	   (text-extra (text-extra-as-mscx self))
+	   (vel-extra (vel-extra-as-mscx self))
+	   (char-extra (char-extras-as-mscx self))
+	   (grace-notes-obj (and (fboundp 'om::gnotes) (om::gnotes self)))
+	   (graces (and grace-notes-obj
+			(ignore-errors (om::glist grace-notes-obj))))
+           (group-size (length graces)))
+      (append
+       (current-tempo-as-mscx)
 
-     ;; OM grace groups are exported as MuseScore acciaccaturas.
-     ;; durationType is chosen heuristically from group size for readability only.
-     (loop for grace-chord in graces
-           append (cons-mscx-grace-chord grace-chord
-                                         :group-size group-size
-                                         :approx approx))
+       ;; OM grace groups are exported as MuseScore acciaccaturas.
+       ;; durationType is chosen heuristically from group size for readability only.
+       (loop for grace-chord in graces
+             append (cons-mscx-grace-chord grace-chord
+                                           :group-size group-size
+                                           :approx approx))
 
-     ;; ensure correct list order here, and below in om::rest, order decides semantics in output
-     text-extra
-     vel-extra
-     (list "<Chord>")
-     (when beam-mode
-       (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
-     (loop for i from 1 to nbpoints
-	   collect "<dots>1</dots>")
-     (list (format nil "<durationType>~A</durationType>"
-		   (xml-head-to-mscx-duration-type note-head)))
+       ;; ensure correct list order here, and below in om::rest, order decides semantics in output
+       text-extra
+       vel-extra
+       (list "<Chord>")
+       (when beam-mode
+	 (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
+       (loop for i from 1 to nbpoints
+	     collect "<dots>1</dots>")
+       (list (format nil "<durationType>~A</durationType>"
+		     (xml-head-to-mscx-duration-type note-head)))
 
-     ;; slurs are chord-level spanners in MSCX
-     slur-spanners
+       ;; slurs are chord-level spanners in MSCX
+       slur-spanners
 
-     ;; char-extras are also chord-level in MSCX
-     char-extra
+       ;; char-extras are also chord-level in MSCX
+       char-extra
 
-     (loop for note in inside
-	   append
-	   (let* ((midi (om-midic-to-midi (om::midic note)))
-		  (tpc (note-to-mscx-tpc note approx))
-		  (vel (om::get-object-vel note))
-		  (head-extra (note-head-as-mscx note)))
-             (append
-              (list "<Note>")
-              tie-spanner
-              (list (format nil "<pitch>~D</pitch>" midi)
-                    (format nil "<tpc>~D</tpc>" tpc)
-                    (format nil "<velocity>~D</velocity>" vel))
-              head-extra
-              (list "</Note>"))))
-     (list "</Chord>"))))
+       (loop for note in inside
+	     append
+	     (let* ((pdata (note-to-mscx-pitch-data note))
+		    (midi (getf pdata :pitch))
+		    (tpc (getf pdata :tpc))
+		    (accidental (getf pdata :accidental))
+		    (vel (om::get-object-vel note))
+		    (head-extra (note-head-as-mscx note)))
+	       (append
+		(list "<Note>")
+		tie-spanner
+		(list (format nil "<pitch>~D</pitch>" midi)
+		      (format nil "<tpc>~D</tpc>" tpc)
+		      (format nil "<velocity>~D</velocity>" vel))
+		(mscx-note-accidental-element accidental)
+		head-extra
+		(list "</Note>"))))
+     
+       (list "</Chord>")))))
 
 (defmethod cons-mscx-expr ((self om::rest) &key free clef (approx 2) part)
   (let* ((dur (if (listp free) (car free) free))
@@ -1317,7 +1563,8 @@ Otherwise use the initial tempo value."
 (defmethod cons-mscx-expr ((self om::voice) &key free (clef '(G 2)) (approx 2) part)
   (let ((voicenum part)
         (measures (om::inside self)))
-    (let ((*mscx-tempo-map* (build-voice-tempo-map self measures)))
+    (let ((*mscx-current-approx* (mscx-safe-approx self approx))
+          (*mscx-tempo-map* (build-voice-tempo-map self measures)))
       (list
        (format nil "<Staff id=\"~D\">" voicenum)
        (loop for mes in measures
