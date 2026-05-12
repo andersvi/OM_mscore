@@ -114,6 +114,12 @@
 ;;; - MSCX export does not quantize pitch notation by itself.
 ;;; - It uses the OM object's own tonalite/approx and OM's scale tables.
 ;;; - Playback/tuning precision is not the priority here; notation is.
+;;;
+;;; Microtonal notation policy: We do not auto-detect or auto-quantize
+;;; microtonal material.  MSCX export follows the OM approx/scale already stored
+;;; on the exported object.  Users working with raw midic data must select the
+;;; intended EDO in the OM editor, or set the approx slot of the container
+;;; explicitly before export.
 ;;; ----------------------------------------------------------------------
 
 (defparameter *mscx-current-approx* 2
@@ -219,10 +225,6 @@ Use STRING as a pragmatic comparison layer."
 
       (t 0))))
 
-
-
-
-Warning: MSCX export: no MuseScore accidental mapping for OM alteration #\» / key "»".
 
 (defparameter *om-alteration->mscx-notation*
   '((#\+ . (:std-alt 0 :accidental "accidentalQuarterToneSharpStein"))
@@ -888,11 +890,6 @@ FREE is the written duration used for durationType."
 
 (defun make-mscx-tuplet-end ()
   (list "<endTuplet/>"))
-
-
-
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
