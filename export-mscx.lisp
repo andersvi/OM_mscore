@@ -220,20 +220,46 @@ Use STRING as a pragmatic comparison layer."
       (t 0))))
 
 
+
+
+Warning: MSCX export: no MuseScore accidental mapping for OM alteration #\» / key "»".
+
 (defparameter *om-alteration->mscx-notation*
   '((#\+ . (:std-alt 0 :accidental "accidentalQuarterToneSharpStein"))
     (#\0 . (:std-alt 0 :accidental "accidentalThreeQuarterTonesSharpStein"))
 
+    ;; natural-based HE/EDO symbols
     (#\§ . (:std-alt 0 :accidental "accidentalNaturalOneArrowUp"))
+    (#\± . (:std-alt 0 :accidental "accidentalNaturalTwoArrowsUp"))
+    (#\» . (:std-alt 0 :accidental "accidentalNaturalThreeArrowsUp"))
     (#\¢ . (:std-alt 0 :accidental "accidentalNaturalOneArrowDown"))
     (#\¬ . (:std-alt 0 :accidental "accidentalNaturalTwoArrowsDown"))
+    (#\¶ . (:std-alt 0 :accidental "accidentalNaturalThreeArrowsDown"))
 
     ;; sharp-based HE/EDO symbols
     (#\£ . (:std-alt 1 :accidental "accidentalSharpOneArrowDown"))
     (#\¨ . (:std-alt 1 :accidental "accidentalSharpOneArrowUp"))
     (#\² . (:std-alt 1 :accidental "accidentalSharpTwoArrowsUp"))
-    (#\À . (:std-alt 1 :accidental "accidentalSharpTwoArrowsDown")))
+    (#\À . (:std-alt 1 :accidental "accidentalSharpTwoArrowsDown"))
+    (#\¼ . (:std-alt 1 :accidental "accidentalSharpThreeArrowsUp"))
+    (#\· . (:std-alt 1 :accidental "accidentalSharpThreeArrowsDown"))
 
+    ;; flat-based / mirrored-flat symbols, 96 EDO_b
+    (#\^ . (:std-alt 0  :accidental "accidentalThreeQuarterTonesFlatZimmermann"))
+
+    (#\µ . (:std-alt -1 :accidental "accidentalFlatThreeArrowsDown"))
+    (#\« . (:std-alt -1 :accidental "accidentalFlatTwoArrowsDown"))
+    (#\¡ . (:std-alt -1 :accidental "accidentalFlatOneArrowDown"))
+
+    ;; #\b handled as ordinary flat elsewhere.
+    ;; If needed, add explicit ordinary flat handling in om-alt-standard-alteration.
+
+    (#\¦ . (:std-alt -1 :accidental "accidentalFlatOneArrowUp"))
+    (#\° . (:std-alt -1 :accidental "accidentalFlatTwoArrowsUp"))
+    (#\º . (:std-alt -1 :accidental "accidentalFlatThreeArrowsUp"))
+
+    (#\` . (:std-alt 0  :accidental "accidentalQuarterToneFlatStein"))
+    )
 
   "Mapping from OM alteration glyphs to MuseScore notation data.
 
