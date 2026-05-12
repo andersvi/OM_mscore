@@ -226,56 +226,63 @@ Use STRING as a pragmatic comparison layer."
       (t 0))))
 
 
-(defparameter *om-alteration->mscx-notation*
-  '((#\+ . (:std-alt 0 :accidental "accidentalQuarterToneSharpStein"))
-    (#\0 . (:std-alt 0 :accidental "accidentalThreeQuarterTonesSharpStein"))
+;; ASCII-safe mapping from OM alteration character codes to MuseScore notation data.
+;; No need to rely on :external-format :utf-8 when loading
+
+(defparameter *om-alteration-code->mscx-notation*
+  '((#x002B . (:std-alt 0  :accidental "accidentalQuarterToneSharpStein"))          ; +
+    (#x0030 . (:std-alt 0  :accidental "accidentalThreeQuarterTonesSharpStein"))    ; 0
 
     ;; natural-based HE/EDO symbols
-    (#\§ . (:std-alt 0 :accidental "accidentalNaturalOneArrowUp"))
-    (#\± . (:std-alt 0 :accidental "accidentalNaturalTwoArrowsUp"))
-    (#\» . (:std-alt 0 :accidental "accidentalNaturalThreeArrowsUp"))
-    (#\¢ . (:std-alt 0 :accidental "accidentalNaturalOneArrowDown"))
-    (#\¬ . (:std-alt 0 :accidental "accidentalNaturalTwoArrowsDown"))
-    (#\¶ . (:std-alt 0 :accidental "accidentalNaturalThreeArrowsDown"))
+    (#x00A7 . (:std-alt 0  :accidental "accidentalNaturalOneArrowUp"))              ; section sign
+    (#x00B1 . (:std-alt 0  :accidental "accidentalNaturalTwoArrowsUp"))             ; plus-minus
+    (#x00BB . (:std-alt 0  :accidental "accidentalNaturalThreeArrowsUp"))           ; right guillemet
+
+    (#x00A2 . (:std-alt 0  :accidental "accidentalNaturalOneArrowDown"))            ; cent sign
+    (#x00AC . (:std-alt 0  :accidental "accidentalNaturalTwoArrowsDown"))           ; not sign
+    (#x00B6 . (:std-alt 0  :accidental "accidentalNaturalThreeArrowsDown"))         ; pilcrow
 
     ;; sharp-based HE/EDO symbols
-    (#\£ . (:std-alt 1 :accidental "accidentalSharpOneArrowDown"))
-    (#\¨ . (:std-alt 1 :accidental "accidentalSharpOneArrowUp"))
-    (#\² . (:std-alt 1 :accidental "accidentalSharpTwoArrowsUp"))
-    (#\À . (:std-alt 1 :accidental "accidentalSharpTwoArrowsDown"))
-    (#\¼ . (:std-alt 1 :accidental "accidentalSharpThreeArrowsUp"))
-    (#\· . (:std-alt 1 :accidental "accidentalSharpThreeArrowsDown"))
+    (#x00A3 . (:std-alt 1  :accidental "accidentalSharpOneArrowDown"))              ; pound sign
+    (#x00A8 . (:std-alt 1  :accidental "accidentalSharpOneArrowUp"))                ; diaeresis
+    (#x00B2 . (:std-alt 1  :accidental "accidentalSharpTwoArrowsUp"))               ; superscript two
+    (#x00C0 . (:std-alt 1  :accidental "accidentalSharpTwoArrowsDown"))             ; A grave
+    (#x00BC . (:std-alt 1  :accidental "accidentalSharpThreeArrowsUp"))             ; one quarter
+    (#x00B7 . (:std-alt 1  :accidental "accidentalSharpThreeArrowsDown"))           ; middle dot
 
-    ;; flat-based / mirrored-flat symbols, 96 EDO_b
-    (#\^ . (:std-alt 0  :accidental "accidentalThreeQuarterTonesFlatZimmermann"))
+    ;; flat / mirrored-flat symbols, 96 EDO_b
+    (#x005E . (:std-alt 0  :accidental "accidentalThreeQuarterTonesFlatZimmermann")) ; ^
+    (#x0060 . (:std-alt 0  :accidental "accidentalQuarterToneFlatStein"))           ; backquote
 
-    (#\µ . (:std-alt -1 :accidental "accidentalFlatThreeArrowsDown"))
-    (#\« . (:std-alt -1 :accidental "accidentalFlatTwoArrowsDown"))
-    (#\¡ . (:std-alt -1 :accidental "accidentalFlatOneArrowDown"))
+    (#x00B5 . (:std-alt -1 :accidental "accidentalFlatThreeArrowsDown"))            ; micro sign
+    (#x00AB . (:std-alt -1 :accidental "accidentalFlatTwoArrowsDown"))              ; left guillemet
+    (#x00A1 . (:std-alt -1 :accidental "accidentalFlatOneArrowDown"))               ; inverted exclamation
 
-    ;; #\b handled as ordinary flat elsewhere.
-    ;; If needed, add explicit ordinary flat handling in om-alt-standard-alteration.
+    (#x0062 . (:std-alt -1 :accidental nil))                                        ; b, ordinary flat
 
-    (#\¦ . (:std-alt -1 :accidental "accidentalFlatOneArrowUp"))
-    (#\° . (:std-alt -1 :accidental "accidentalFlatTwoArrowsUp"))
-    (#\º . (:std-alt -1 :accidental "accidentalFlatThreeArrowsUp"))
+    (#x00A6 . (:std-alt -1 :accidental "accidentalFlatOneArrowUp"))                 ; broken bar
+    (#x00B0 . (:std-alt -1 :accidental "accidentalFlatTwoArrowsUp"))                ; degree sign
+    (#x00BA . (:std-alt -1 :accidental "accidentalFlatThreeArrowsUp")))             ; masculine ordinal
 
-    (#\` . (:std-alt 0  :accidental "accidentalQuarterToneFlatStein"))
-    )
-
-  "Mapping from OM alteration glyphs to MuseScore notation data.
+  "ASCII-safe mapping from OM alteration character codes to MuseScore notation data.
 
 :std-alt is the conventional chromatic base alteration used for pitch/TPC:
   -1 flat, 0 natural, 1 sharp, etc.
 
-:accidental is the MuseScore accidental subtype written as <Accidental>.")
+:accidental is the MuseScore accidental subtype written as <Accidental>.
+NIL means the ordinary accidental is represented by pitch/TPC only.")
+
 
 
 (defun om-alteration-mscx-notation (alt)
   "Return plist (:std-alt ... :accidental ...) for OM alteration ALT.
-Returns NIL if ALT is not explicitly mapped here."
-  (cdr (assoc alt *om-alteration->mscx-notation*
-              :test #'om-alt=)))
+
+This uses character codes instead of literal non-ASCII characters, so the
+source file remains safe to load even when LispWorks reads it as Latin-1."
+  (when (characterp alt)
+    (cdr (assoc (char-code alt)
+                *om-alteration-code->mscx-notation*
+                :test #'eql))))
 
 
 (defun om-alteration->mscx-accidental (alt)
