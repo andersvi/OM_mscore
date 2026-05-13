@@ -271,7 +271,6 @@ Use STRING as a pragmatic comparison layer."
 NIL means the ordinary accidental is represented by pitch/TPC only.")
 
 
-
 (defun om-alteration-mscx-notation (alt)
   "Return plist (:std-alt ... :accidental ...) for OM alteration ALT.
 
@@ -281,7 +280,6 @@ source file remains safe to load even when LispWorks reads it as Latin-1."
     (cdr (assoc (char-code alt)
                 *om-alteration-code->mscx-notation*
                 :test #'eql))))
-
 
 (defun om-alteration->mscx-accidental (alt)
   "Map an OM alteration object to a MuseScore accidental subtype string."
@@ -381,7 +379,7 @@ Microtonal accidentals must not be folded into <pitch>."
             (getf pdata :accidental))
     pdata))
 
-(debug-om-note-mscx-notation (om::mki 'om::note :midic 6022))
+;; (debug-om-note-mscx-notation (om::mki 'om::note :midic 6022))
 
 
 
