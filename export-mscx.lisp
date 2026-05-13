@@ -22,9 +22,12 @@
 (defun mscx-header ()
   (list "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
 
+
+;;; ----------------------------------------------------------------------
 ;;;
-;;; pitch, pitch class
+;;; PITCH, PITCH CLASS
 ;;;
+;;; ----------------------------------------------------------------------
 
 (defun om-midic-to-midi (midic)
   "e.g. 6000 -> midi 60."
@@ -48,20 +51,14 @@
     (t "")))
 
 (defun step+alter-to-tpc (step alteration)
-  (or (cdr (assoc (format nil "~A~A" step (alteration->acc-string alteration))
-                  *mscx-tpc-table*
-                  :test #'string=))
-      14))
+  (cdr (assoc (format nil "~A~A" step (alteration->acc-string alteration))
+              *mscx-tpc-table*
+              :test #'string=)))
 
 ;; ENHARMONICS
 ;;
-;; lives in OMs 'tonalite class, for each note-object
+;; lives in OMs 'tonalite class, per note
 ;; 
-;; TODO: micro-tone support, further scales.  various scale/spellings etc. are
-;; spread around in OM, needs cleanup in OM, or hacks here...
-;;
-;; the symbols inside tonalite are set in om-package: eg om:do, om::bemol ->
-;; compare with string= - can compare :keywords
 
 (defun om-tonnote->step-string (tonnote)
   (cond ((string-equal tonnote :do)  "C")
@@ -107,24 +104,11 @@
     (and name
          (cdr (assoc name *mscx-tpc-table* :test #'string=)))))
 
-;;; ----------------------------------------------------------------------
 ;;; OM scale notation -> MSCX note pitch data
 ;;;
 ;;; Policy:
-;;; - MSCX export does not quantize pitch notation by itself.
-;;; - It uses the OM object's own tonalite/approx and OM's scale tables.
-;;; - Playback/tuning precision is not the priority here; notation is.
-;;;
-;;; Microtonal notation policy: We do not auto-detect or auto-quantize
-;;; microtonal material.  MSCX export follows the OM approx/scale already stored
-;;; on the exported object.  Users working with raw midic data must select the
-;;; intended EDO in the OM editor, or set the approx slot of the container
-;;; explicitly before export.
-;;; ----------------------------------------------------------------------
-
-(defparameter *mscx-current-approx* 2
-  "Dynamically bound fallback approx while exporting a voice/poly/chord.
-The public export API should not expose this as an argument.")
+;;; - by default MSCX export uses the OM object's own approx and OM's scale tables.
+;;; - Playback/tuning precision is not priority, notation is.
 
 (defparameter *om-line->mscx-step*
   '((0 . "C")
@@ -145,9 +129,16 @@ The public export API should not expose this as an argument.")
     ("A" . 9)
     ("B" . 11)))
 
-(defun mscx-safe-approx (obj &optional (fallback *mscx-current-approx*))
+(defparameter *mscx-current-approx* nil
+  "Dynamically bound OM approx/scale used during MSCX export.
+
+When exporting a voice/poly/chord in notation-scale :from-object mode,
+this is normally bound from the exported OM object's own approx value.
+When notation-scale is a number, this is bound to that explicit OM scale.")
+
+(defun mscx-object-approx (obj &optional (fallback 2))
   "Try to read OM approx from OBJ or OBJ's tonalite.
-Return FALLBACK if OBJ does not support approx."
+Does not look at *mscx-current-approx*."
   (or (ignore-errors (om::approx obj))
       (ignore-errors
         (let ((ton (om::tonalite obj)))
@@ -155,23 +146,65 @@ Return FALLBACK if OBJ does not support approx."
       fallback
       2))
 
+(defun mscx-effective-export-approx (obj notation-scale)
+  "Resolve the OM scale/approx used for MSCX notation export.
+
+NOTATION-SCALE:
+  :from-object -> use OBJ's own OM approx
+  number       -> force this OM approx during export"
+  (cond
+    ((or (null notation-scale) (eq notation-scale :from-object))
+     (mscx-object-approx obj 2))
+    ((numberp notation-scale) notation-scale)
+    (t (warn "MSCX export: unknown notation-scale ~S; using object's approx." notation-scale)
+       (mscx-object-approx obj 2))))
+
+(defun mscx-effective-approx (obj &optional (fallback 2))
+  "Return effective approx for note spelling.
+
+During export, *mscx-current-approx* wins.  Outside export, fall back to
+the note/chord object's own approx."
+  (or *mscx-current-approx*
+      (mscx-object-approx obj fallback)
+      2))
+
+(defun mscx-quantize-midic-to-approx (midic approx)
+  "Round MIDIC to nearest step in the OM scale represented by APPROX.
+
+The returned value is the midic value actually exported to MSCX notation.
+The raw OM midic is not preserved in the MSCX file."
+  (let* ((scale (om::get-current-scale approx))
+         (factor (om::approx-factor scale))
+         (steps (round (/ 1200 factor)))
+         (octave-base (* 1200 (floor midic 1200)))
+         (cents (mod midic 1200))
+         (index (round (/ cents factor))))
+    (when (>= index steps)
+      (setf index 0)
+      (incf octave-base 1200))
+    (+ octave-base (* index factor))))
+
 (defun om-note-scale-notation (note)
   "Return plist with OM scale spelling for NOTE.
 
-The relevant values are:
-  :midic
-  :approx
+The raw note midic is quantized to the active OM approx before export.
+This means MSCX notation follows the same EDO grid as the OM object/editor.
+
+Relevant values:
+  :raw-midic    original OM midic
+  :midic        exported/quantized midic
+  :approx       active OM scale approx
   :line
   :alteration
   :up-octave
-  :scale
-
-This follows OM's own get-current-scale/give-alteration logic."
-  (let* ((midic (om::midic note))
-         (approx (mscx-safe-approx note))
+  :scale"
+  (let* ((raw-midic (om::midic note))
+         (approx (mscx-effective-approx note))
          (scale (om::get-current-scale approx))
-         (alt-data (om::give-alteration scale midic)))
-    (list :midic midic
+         (export-midic (mscx-quantize-midic-to-approx raw-midic approx))
+         (alt-data (om::give-alteration scale export-midic)))
+    (list :raw-midic raw-midic
+          :midic export-midic
           :approx approx
           :scale scale
           :line (first alt-data)
@@ -227,7 +260,7 @@ Use STRING as a pragmatic comparison layer."
 
 
 ;; ASCII-safe mapping from OM alteration character codes to MuseScore notation data.
-;; Don't rely on ':external-format :utf-8', until UTF-based OM
+;; Don't rely on ':external-format :utf-8' until UTF-based OM
 
 (defparameter *om-alteration-code->mscx-notation*
   '((#X002b . (:std-alt 0  :accidental "accidentalQuarterToneSharpStein"))          ; +				+
@@ -322,14 +355,21 @@ Microtonal accidentals must not be folded into <pitch>."
 
 (defun note-to-mscx-pitch-data (note)
   "Return plist for MSCX note export:
+  :raw-midic
+  :midic
   :pitch
   :tpc
   :accidental
   :step
   :line
   :alteration
-  :approx "
+  :approx
+
+Enharmonic policy:
+- If no explicit microtonal accidental is emitted, prefer NOTE's OM tonalite/TPC.
+- If a microtonal accidental is emitted, use OM scale/give-alteration data."
   (let* ((notation (om-note-scale-notation note))
+         (raw-midic (getf notation :raw-midic))
          (midic (getf notation :midic))
          (line (getf notation :line))
          (alt (getf notation :alteration))
@@ -337,14 +377,23 @@ Microtonal accidentals must not be folded into <pitch>."
          (approx (getf notation :approx))
          (step (om-line->mscx-step line))
          (std-alt (om-alt-standard-alteration alt))
-         (tpc (or (step+alter-to-tpc step std-alt)
-                  (let ((ton (om::tonalite note)))
-                    (and ton (om-tonalite-to-tpc ton)))
+         (accidental (om-alteration->mscx-accidental alt))
+         (ton (ignore-errors (om::tonalite note)))
+         (tonalite-tpc (and ton (om-tonalite-to-tpc ton)))
+         (scale-tpc (step+alter-to-tpc step std-alt))
+         (tpc (or (and (null accidental) tonalite-tpc)
+                  scale-tpc
+                  tonalite-tpc
                   14))
-	 (pitch (mscx-written-midi-from-step midic step std-alt up-octave))
-	 (pitch (mscx-written-midi-from-step midic step std-alt up-octave))
-         (accidental (om-alteration->mscx-accidental alt)))
-    (list :pitch pitch
+         ;; For ordinary/enharmonic notes, rounded MIDI pitch is safest.
+         ;; For microtonal accidentals, use written base pitch, so e.g.
+         ;; A quarter-sharp remains pitch 69, not rounded to 70.
+         (pitch (if accidental
+                    (mscx-written-midi-from-step midic step std-alt up-octave)
+                    (om-midic-to-midi midic))))
+    (list :raw-midic raw-midic
+          :midic midic
+          :pitch pitch
           :tpc tpc
           :accidental accidental
           :step step
@@ -364,22 +413,51 @@ Microtonal accidentals must not be folded into <pitch>."
           (format nil "<subtype>~A</subtype>" subtype)
           "</Accidental>")))
 
-(defun debug-om-note-mscx-notation (note)
-  "REPL helper for checking OM -> MSCX spelling before exporting whole scores."
-  (let* ((pdata (note-to-mscx-pitch-data note)))
-    (format t "~&midic: ~A~%" (om::midic note))
-    (format t "approx: ~A~%" (getf pdata :approx))
-    (format t "line: ~A  step: ~A~%" (getf pdata :line) (getf pdata :step))
-    (format t "OM alteration: ~S  key: ~S~%"
-            (getf pdata :alteration)
-            (om-alteration-key (getf pdata :alteration)))
-    (format t "MSCX pitch: ~A  tpc: ~A  accidental: ~A~%"
-            (getf pdata :pitch)
-            (getf pdata :tpc)
-            (getf pdata :accidental))
-    pdata))
+(defun debug-om-note-mscx-notation (note &optional context)
+  "REPL helper for checking OM -> MSCX spelling.
 
-;; (debug-om-note-mscx-notation (om::mki 'om::note :midic 6022))
+If CONTEXT is supplied, its approx is dynamically bound, simulating export
+from that voice/poly/chord-seq/chord."
+  (let ((*mscx-current-approx*
+          (or (and context (mscx-object-approx context))
+              *mscx-current-approx*)))
+    (let* ((pdata (note-to-mscx-pitch-data note)))
+      (format t "~&raw midic: ~A~%" (getf pdata :raw-midic))
+      (format t "export midic: ~A~%" (getf pdata :midic))
+      (format t "approx: ~A~%" (getf pdata :approx))
+      (format t "line: ~A  step: ~A~%" (getf pdata :line) (getf pdata :step))
+      (format t "OM alteration: ~S  key: ~S~%"
+              (getf pdata :alteration)
+              (om-alteration-key (getf pdata :alteration)))
+      (format t "MSCX pitch: ~A  tpc: ~A  accidental: ~A~%"
+              (getf pdata :pitch)
+              (getf pdata :tpc)
+              (getf pdata :accidental))
+      pdata)))
+
+;; (debug-om-note-mscx-notation (om::mki 'om::note :midic 6022 ))
+;; raw midic: 6022
+;; export midic: 6000
+;; approx: 2
+;; line: 0  step: C
+;; OM alteration: nil  key: nil
+;; MSCX pitch: 60  tpc: 14  accidental: nil
+
+;; (debug-om-note-mscx-notation (om::mki 'om::note :midic 6190 :approx 16))
+;; raw midic: 6022
+;; export midic: 6025
+;; approx: 16
+;; line: 0  step: C
+;; OM alteration: #\l  key: "l"
+;; MSCX pitch: 60  tpc: 14  accidental: nil
+
+;; (debug-om-note-mscx-notation (om::mki 'om::note :midic 6022 :approx 960.1))
+;; raw midic: 6022
+;; export midic: 6025
+;; approx: 960.1
+;; line: 0  step: C
+;; OM alteration: #\±  key: "±"
+;; MSCX pitch: 60  tpc: 14  accidental: accidentalNaturalTwoArrowsUp
 
 
 
@@ -1209,11 +1287,14 @@ Computed only from preceding chords in the same measure."
         ((<= count 7) "16th")
         (t "32nd")))
 
-(defun cons-mscx-grace-chord (self &key group-size (approx 2))
+
+(defun cons-mscx-grace-chord (self &key group-size (notation-scale :from-object))
   "Export one OM grace-chord as a MuseScore acciaccatura.
 Grace notes are emitted without extras, beams, ties, slurs, or text.
 Only basic chord/note content is preserved."
-  (let ((*mscx-current-approx* (mscx-safe-approx self approx)))
+  (let ((*mscx-current-approx*
+          (or *mscx-current-approx*
+              (mscx-effective-export-approx self notation-scale))))
     (let* ((inside (om::inside self))
            (duration-type (mscx-grace-duration-type-from-count (or group-size 1))))
       (append
@@ -1238,10 +1319,12 @@ Only basic chord/note content is preserved."
      
        (list "</Chord>")))))
 
-(defgeneric cons-mscx-expr (self &key free clef approx part))
+(defgeneric cons-mscx-expr (self &key free clef notation-scale part))
 
-(defmethod cons-mscx-expr ((self om::chord) &key free clef (approx 2) part)
-  (let ((*mscx-current-approx* (mscx-safe-approx self approx)))
+(defmethod cons-mscx-expr ((self om::chord) &key free clef (notation-scale :from-object) part)
+  (let ((*mscx-current-approx*
+          (or *mscx-current-approx*
+              (mscx-effective-export-approx self notation-scale))))
     (let* ((dur (if (listp free) (car free) free))
 	   (head-and-pts (mxml::get-head-and-points dur))
 	   (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
@@ -1264,8 +1347,8 @@ Only basic chord/note content is preserved."
        ;; durationType is chosen heuristically from group size for readability only.
        (loop for grace-chord in graces
              append (cons-mscx-grace-chord grace-chord
-                                           :group-size group-size
-                                           :approx approx))
+					   :group-size group-size
+					   :notation-scale notation-scale))
 
        ;; ensure correct list order here, and below in om::rest, order decides semantics in output
        text-extra
@@ -1304,7 +1387,8 @@ Only basic chord/note content is preserved."
      
        (list "</Chord>")))))
 
-(defmethod cons-mscx-expr ((self om::rest) &key free clef (approx 2) part)
+
+(defmethod cons-mscx-expr ((self om::rest) &key free clef (notation-scale :from-object) part)
   (let* ((dur (if (listp free) (car free) free))
          (head-and-pts (mxml::get-head-and-points dur))
          (note-head (cadr (find (car head-and-pts) mxml::*note-types* :key 'car)))
@@ -1321,7 +1405,8 @@ Only basic chord/note content is preserved."
                    (xml-head-to-mscx-duration-type note-head)))
      (list "</Rest>"))))
 
-(defmethod cons-mscx-expr ((self om::group) &key free clef (approx 2) part)
+
+(defmethod cons-mscx-expr ((self om::group) &key free clef (notation-scale :from-object) part)
   (let* ((durtot (if (listp free) (car free) free))
          (cpt (if (listp free) (cadr free) 0))
          (num (or (om::get-group-ratio self) (om::extent self)))
@@ -1341,7 +1426,7 @@ Only basic chord/note content is preserved."
                  (prog1
                      (let ((*mscx-current-offset*
                              (+ *mscx-current-offset* running-offset)))
-                       (cons-mscx-expr obj :free obj-free :approx approx :part part))
+                       (cons-mscx-expr obj :free obj-free :notation-scale notation-scale :part part))
                    (incf running-offset obj-free))))))
 
       ;; ratio simplifies away: recurse normally
@@ -1356,7 +1441,7 @@ Only basic chord/note content is preserved."
                  (prog1
                      (let ((*mscx-current-offset*
                              (+ *mscx-current-offset* running-offset)))
-                       (cons-mscx-expr obj :free obj-free :approx approx :part part))
+                       (cons-mscx-expr obj :free obj-free :notation-scale notation-scale :part part))
                    (incf running-offset obj-free))))))
 
       ;; real tuplet
@@ -1379,10 +1464,7 @@ Only basic chord/note content is preserved."
                       (tmp (let ((*mscx-current-offset*
                                    (+ *mscx-current-offset* running-offset)))
                              (multiple-value-list
-                              (cons-mscx-expr obj
-                                              :free (list obj-free cpt)
-                                              :approx approx
-                                              :part part))))
+                              (cons-mscx-expr obj :free (list obj-free cpt) :notation-scale notation-scale :part part))))
                       (exp (car tmp)))
                  (when (and (cadr tmp) (> (cadr tmp) depth))
                    (setf depth (cadr tmp)))
@@ -1540,7 +1622,8 @@ Otherwise use the initial tempo value."
         (or (null prev)
             (not (same-signature-p measure prev))))))
 
-(defmethod cons-mscx-expr ((self om::measure) &key free (clef '(G 2)) (approx 2) part)
+
+(defmethod cons-mscx-expr ((self om::measure) &key free (clef '(G 2)) (notation-scale :from-object) part)
   (let* ((mesnum free)
          (inside (om::inside self))
          (tree (om::tree self))
@@ -1575,8 +1658,7 @@ Otherwise use the initial tempo value."
                     (obj-free (* symb-beat-val factor)))
                (prog1
                    (let ((*mscx-current-offset* running-offset))
-                     (cons-mscx-expr obj :free obj-free
-                                     :approx approx :part part))
+                     (cons-mscx-expr obj :free obj-free :notation-scale notation-scale :part part))
                  (incf running-offset obj-free)))))
 
      "<BarLine>"
@@ -1586,10 +1668,10 @@ Otherwise use the initial tempo value."
      "</voice>"
      "</Measure>")))
 
-(defmethod cons-mscx-expr ((self om::voice) &key free (clef '(G 2)) (approx 2) part)
+(defmethod cons-mscx-expr ((self om::voice) &key free (clef '(G 2)) (notation-scale :from-object) part)
   (let ((voicenum part)
         (measures (om::inside self)))
-    (let ((*mscx-current-approx* (mscx-safe-approx self approx))
+    (let ((*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
           (*mscx-tempo-map* (build-voice-tempo-map self measures)))
       (list
        (format nil "<Staff id=\"~D\">" voicenum)
@@ -1599,11 +1681,11 @@ Otherwise use the initial tempo value."
              collect
              (let ((*mscx-current-measure-index* measure-index)
                    (*mscx-current-offset* 0))
-               (cons-mscx-expr mes :free i :clef clef :approx approx :part part)))
+               (cons-mscx-expr mes :free i :clef clef :notation-scale notation-scale :part part)))
        "</Staff>"))))
 
 
-(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (approx 2) part)
+(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part)
   (let ((voices (om::inside self)))
     (list
      "<museScore version=\"4.60\">"
@@ -1631,13 +1713,13 @@ Otherwise use the initial tempo value."
          (loop for v in voices
                for i = 1 then (+ i 1)
                append
-               (cons-mscx-expr v :part i :clef (car clef) :approx approx))
+	       (cons-mscx-expr v :part i :clef (car clef) :notation-scale notation-scale))
 	 ;; one clef per voice
 	 (loop for v in voices
                for i = 1 then (+ i 1)
                for k in clef
                append
-               (cons-mscx-expr v :part i :clef k :approx approx)))
+	       (cons-mscx-expr v :part i :clef k :notation-scale notation-scale)))
 
      "</Score>"
      "</museScore>")))
@@ -1688,61 +1770,76 @@ use only the first clef letter."
     (loop for line in (mscx::mscx-header) do (format out "~A~%" line))
     (recursive-write-xml out list -1)))
 
-(defmethod mscx-export ((self t) &key clefs approx path name) nil)
+(defmethod mscx-export ((self t) &key clefs notation-scale path name) nil)
 
-(defmethod mscx-export ((self voice) &key clefs approx path name)
+(defmethod mscx-export ((self voice) &key clefs (notation-scale :from-object) path name)
   (mscx-export (make-instance 'poly :voices self)
-	       :clefs clefs :approx approx :path path :name name))
+               :clefs clefs
+               :notation-scale notation-scale
+               :path path
+               :name name))
 
-(defmethod mscx-export ((self poly) &key clefs approx path name)
+(defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name)
   (let* ((pathname (or path
                        (om-choose-new-file-dialog
                         :name (or name "om-export.mscx")
                         :directory (or (and name (make-pathname :name nil :type nil :defaults name))
                                        nil)
                         :prompt "Export MuseScore MSCX")))
-         (content (mscx::cons-mscx-expr self :clef (or clefs '((G 2))) :approx (or approx 2))))
+         (content (mscx::cons-mscx-expr self
+                                        :clef (or clefs '((G 2)))
+                                        :notation-scale notation-scale)))
     (when pathname
       (write-mscx-file content pathname)
       pathname)))
 
-(defmethod! export-mscx ((self t) &optional (clefs nil) (approx 2) (path nil))
+(defmethod! export-mscx ((self t) &optional (clefs nil) (notation-scale :from-object) (path nil))
   :icon 351
-  :indoc '("a VOICE or POLY object" "list of voice clefs" "tone subdivision approximation" "a target pathname")
-  :initvals '(nil '((G 2)) 2 nil)
+  :indoc '("a VOICE or POLY object"
+           "list of voice clefs"
+           "notation scale: :from-object or OM approx value, e.g. 4, 480.0, 960.0"
+           "a target pathname")
+  :initvals '(nil '((G 2)) :from-object nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
 
-Hack v1:
-- notes/chords/rests
-- clef
-- time signature
-- velocity only
+Microtonal notation policy:
+- default notation-scale is :from-object
+- :from-object uses the OM object's/editor's approx
+- a numeric notation-scale forces that OM approx during export
+- raw midic values are rounded to the active OM scale before notation export
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
          (clefs (cond ((null staff) '((G 2)))
                       ((listp staff) (loop for i in staff collect (om-staff-symbol->mscx-clef i)))
                       (t (list (om-staff-symbol->mscx-clef staff))))))
-    (mscx-export self :clefs (if clefs clefs '((G 2)))
-                 :approx approx :path path)))
+    (mscx-export self
+                 :clefs (if clefs clefs '((G 2)))
+                 :notation-scale notation-scale
+                 :path path)))
 
-(defmethod! export-mscx ((self voice) &optional (clefs nil) (approx 2) (path nil))
+(defmethod! export-mscx ((self voice) &optional (clefs nil) (notation-scale :from-object) (path nil))
   :icon 351
-  :indoc '("a VOICE or POLY object" "list of voice clefs" "tone subdivision approximation" "a target pathname")
-  :initvals '(nil ((G 2)) 2 nil)
+  :indoc '("a VOICE object"
+           "voice clef override"
+           "notation scale: :from-object, or valid OM approx value, e.g. 4, 480.0, 960.0"
+           "a target pathname")
+  :initvals '(nil ((G 2)) :from-object nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
 
-Hack v1:
-- notes/chords/rests
-- clef
-- time signature
-- velocity only
+Microtonal notation policy:
+- default notation-scale is :from-object
+- :from-object uses the OM object's/editor's approx
+- a numeric notation-scale forces that OM approx during export
+- raw midic values are rounded to the active OM scale before notation export
 "
   (let* ((staff (get-edit-param (associated-box self) 'staff))
          (clefs (list (om-staff-symbol->mscx-clef staff))))
-    (mscx-export self :clefs (if clefs clefs '((G 2)))
-                      :approx approx :path path)))
+    (mscx-export self
+                 :clefs (if clefs clefs '((G 2)))
+                 :notation-scale notation-scale
+                 :path path)))
 
-(defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (approx 2) (path nil))
+(defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (notation-scale :from-object) (path nil))
   (call-next-method))
