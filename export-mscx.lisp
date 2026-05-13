@@ -4,7 +4,7 @@
 
 ;;
 ;;
-;; requires existing code in OMs 'import-export/export-mxml.lisp'
+;; requires some existing code in OMs 'import-export/export-mxml.lisp'
 ;;
 
 (defpackage "MSCX" 
@@ -1273,11 +1273,8 @@ Computed only from preceding chords in the same measure."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
 ;;
+;; CONS-MSCX-EXPR for relevant OM classes
 ;;
-;; CONS-MSCX-EXPR - main work for relevant OM classes
-;;
-
-
 
 
 (defun mscx-grace-duration-type-from-count (count)
