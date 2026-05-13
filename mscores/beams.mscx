@@ -28,85 +28,6 @@
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
 				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>76</pitch>
-				<tpc>18</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>81</pitch>
-				<tpc>17</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>62</pitch>
-				<tpc>16</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>59</pitch>
-				<tpc>19</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>73</pitch>
-				<tpc>21</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>16th</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Spanner type="Slur">
-				<Slur/>
-				<next>
-					<location>
-					<fractions>3/4</fractions>
-					</location>
-				</next>
-				</Spanner>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
@@ -115,25 +36,8 @@
 				</Note>
 				</Chord>
 				<Chord>
+				<BeamMode>begin</BeamMode>
 				<durationType>eighth</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>76</pitch>
-				<tpc>18</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>eighth</durationType>
-				<acciaccatura/>
-				<Note>
-				<pitch>79</pitch>
-				<tpc>15</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
@@ -141,35 +45,92 @@
 				</Note>
 				</Chord>
 				<Chord>
+				<BeamMode>end</BeamMode>
 				<durationType>eighth</durationType>
-				<acciaccatura/>
 				<Note>
-				<pitch>96</pitch>
+				<pitch>60</pitch>
 				<tpc>14</tpc>
 				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
-				<durationType>eighth</durationType>
-				<acciaccatura/>
+				<BeamMode>begin</BeamMode>
+				<durationType>16th</durationType>
 				<Note>
-				<pitch>42</pitch>
-				<tpc>20</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
-				<durationType>quarter</durationType>
-				<Spanner type="Slur">
-				<prev>
-					<location>
-					<fractions>-3/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
 				<Note>
-				<pitch>88</pitch>
-				<tpc>18</tpc>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>32nd</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>32nd</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>32nd</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>32nd</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>32nd</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>32nd</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				<velocity>100</velocity>
 				</Note>
 				</Chord>

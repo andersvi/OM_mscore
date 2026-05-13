@@ -38,11 +38,11 @@
 					</location>
 				</next>
 				</Spanner>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>65</pitch>
+				<tpc>13</tpc>
 				<velocity>100</velocity>
 				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
+				<subtype>accidentalNaturalOneArrowUp</subtype>
 				</Accidental>
 				</Note>
 				</Chord>
@@ -56,11 +56,11 @@
 					</location>
 				</prev>
 				</Spanner>
-				<pitch>67</pitch>
-				<tpc>15</tpc>
+				<pitch>65</pitch>
+				<tpc>13</tpc>
 				<velocity>100</velocity>
 				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
+				<subtype>accidentalNaturalOneArrowUp</subtype>
 				</Accidental>
 				</Note>
 				</Chord>
@@ -75,8 +75,8 @@
 					</location>
 				</next>
 				</Spanner>
-				<pitch>69</pitch>
-				<tpc>17</tpc>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
 				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
@@ -93,8 +93,8 @@
 					</location>
 				</prev>
 				</Spanner>
-				<pitch>69</pitch>
-				<tpc>17</tpc>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
 				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
@@ -119,11 +119,11 @@
 					</location>
 				</next>
 				</Spanner>
-				<pitch>62</pitch>
-				<tpc>16</tpc>
+				<pitch>66</pitch>
+				<tpc>20</tpc>
 				<velocity>80</velocity>
 				<Accidental>
-				<subtype>accidentalThreeQuarterTonesSharpStein</subtype>
+				<subtype>accidentalSharpOneArrowDown</subtype>
 				</Accidental>
 				</Note>
 				<Note>
@@ -135,11 +135,63 @@
 					</location>
 				</next>
 				</Spanner>
-				<pitch>72</pitch>
-				<tpc>14</tpc>
+				<pitch>75</pitch>
+				<tpc>23</tpc>
 				<velocity>80</velocity>
 				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
+				<subtype>accidentalSharpOneArrowDown</subtype>
+				</Accidental>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<Spanner type="Tie">
+				<prev>
+					<location>
+					<fractions>-1/4</fractions>
+					</location>
+				</prev>
+				</Spanner>
+				<pitch>66</pitch>
+				<tpc>20</tpc>
+				<velocity>80</velocity>
+				<Accidental>
+				<subtype>accidentalSharpOneArrowDown</subtype>
+				</Accidental>
+				</Note>
+				<Note>
+				<Spanner type="Tie">
+				<prev>
+					<location>
+					<fractions>-1/4</fractions>
+					</location>
+				</prev>
+				</Spanner>
+				<pitch>75</pitch>
+				<tpc>23</tpc>
+				<velocity>80</velocity>
+				<Accidental>
+				<subtype>accidentalSharpOneArrowDown</subtype>
+				</Accidental>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<Spanner type="Tie">
+				<Tie/>
+				<next>
+					<location>
+					<fractions>1/4</fractions>
+					</location>
+				</next>
+				</Spanner>
+				<pitch>62</pitch>
+				<tpc>16</tpc>
+				<velocity>80</velocity>
+				<Accidental>
+				<subtype>accidentalNaturalOneArrowDown</subtype>
 				</Accidental>
 				</Note>
 				</Chord>
@@ -157,59 +209,7 @@
 				<tpc>16</tpc>
 				<velocity>80</velocity>
 				<Accidental>
-				<subtype>accidentalThreeQuarterTonesSharpStein</subtype>
-				</Accidental>
-				</Note>
-				<Note>
-				<Spanner type="Tie">
-				<prev>
-					<location>
-					<fractions>-1/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
-				<pitch>72</pitch>
-				<tpc>14</tpc>
-				<velocity>80</velocity>
-				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
-				</Accidental>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Spanner type="Tie">
-				<Tie/>
-				<next>
-					<location>
-					<fractions>1/4</fractions>
-					</location>
-				</next>
-				</Spanner>
-				<pitch>59</pitch>
-				<tpc>19</tpc>
-				<velocity>80</velocity>
-				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
-				</Accidental>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Spanner type="Tie">
-				<prev>
-					<location>
-					<fractions>-1/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
-				<pitch>59</pitch>
-				<tpc>19</tpc>
-				<velocity>80</velocity>
-				<Accidental>
-				<subtype>accidentalQuarterToneSharpStein</subtype>
+				<subtype>accidentalNaturalOneArrowDown</subtype>
 				</Accidental>
 				</Note>
 				</Chord>

@@ -28,61 +28,7 @@
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
 				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Spanner type="Tie">
-				<Tie/>
-				<next>
-					<location>
-					<fractions>1/4</fractions>
-					</location>
-				</next>
-				</Spanner>
-				<pitch>72</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Spanner type="Tie">
-				<prev>
-					<location>
-					<fractions>-1/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
-				<Spanner type="Tie">
-				<Tie/>
-				<next>
-					<location>
-					<fractions>1/4</fractions>
-					</location>
-				</next>
-				</Spanner>
-				<pitch>72</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Spanner type="Tie">
-				<prev>
-					<location>
-					<fractions>-1/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
-				<pitch>72</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
+				<durationType>whole</durationType>
 				<Note>
 				<Spanner type="Tie">
 				<Tie/>
