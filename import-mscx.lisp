@@ -137,3 +137,19 @@ v0 supports one MSCX voice per Staff/Measure."
   (let ((voice (mscx-voice-node measure-node)))
     (when voice (mscx-children voice))))
 
+;; debug util
+
+(defun mscx-score-summary (xml-list)
+  "Return a small summary of the MSCX score structure."
+  (let* ((score (mscx-score-node xml-list))
+         (division (and score (mscx-score-division score)))
+         (parts (and score (mscx-part-nodes score)))
+         (staffs (and score (mscx-staff-nodes score))))
+    (list :division division
+          :parts (length parts)
+          :staffs (length staffs)
+          :measures-per-staff (loop for staff in staffs collect (length (mscx-measure-nodes staff)))
+          :staff-ids (loop for staff in staffs collect (mscx-staff-id staff)))))
+
+;; (mscx-score-summary om::x)
+;; (:division 480 :parts 1 :staffs 1 :measures-per-staff (1) :staff-ids ("1"))
