@@ -515,3 +515,73 @@ Returns an MSCX-MEASURE-DATA struct."
        (staff (first (mscx::mscx-staff-nodes score)))
        (measure (first (mscx::mscx-measure-nodes staff))))
   (mscx::mscx-measure-debug-data measure state))
+
+
+;;; ------------------------------------------------------------
+;;; Staff -> OM voice
+;;; ------------------------------------------------------------
+
+(defun mscx-measure-data->tree-item (measure-data)
+  "Return one OM measure tree item: ((N D) tree)."
+  (list (mscx-measure-data-signature measure-data)
+        (mscx-measure-data-tree measure-data)))
+
+(defun mscx-measure-data-list->tree (measure-data-list)
+  "Return full OM voice tree."
+  (list '? (loop for data in measure-data-list collect (mscx-measure-data->tree-item data))))
+
+(defun mscx-measure-data-list->chords (measure-data-list)
+  "Return flat chord list for OM voice."
+  (loop for data in measure-data-list append (mscx-measure-data-chords data)))
+
+(defun mscx-measure-data-list->tempo (measure-data-list)
+  "Return OM voice tempo structure.
+
+First tempo becomes the initial tempo. Later tempos are returned as measure-positioned tempo events.
+For now all MSCX tempos are normalized to quarter = BPM."
+  (let ((tempo-events nil)
+        (initial nil))
+    (loop for data in measure-data-list
+          for i from 0
+          for bpm = (mscx-measure-data-tempo data)
+          when bpm do
+            (unless initial (setf initial (list 1/4 bpm)))
+            (push (list (list i 0) (list 1/4 bpm nil)) tempo-events))
+    (list (or initial '(1/4 60))
+          (cdr (reverse tempo-events)))))
+
+(defun staff-from-mscx (staff-node state &key name)
+  "Decode one MSCX Staff into one OM voice."
+  (let ((measure-data-list nil))
+    (loop for measure in (mscx-measure-nodes staff-node)
+          for i from 0 do
+            (setf (mscx-import-state-measure-index state) i)
+            (push (measure-from-mscx measure state) measure-data-list))
+    (let* ((data (reverse measure-data-list))
+           (tree (mscx-measure-data-list->tree data))
+           (chords (mscx-measure-data-list->chords data))
+           (tempo (mscx-measure-data-list->tempo data)))
+      (make-instance 'om::voice :tree tree :chords chords :tempo tempo :name name))))
+
+;; debugger
+(defun mscx-staff-debug-data (staff-node state)
+  "Return readable Staff import data."
+  (let ((voice (staff-from-mscx staff-node state :name (or (mscx-staff-id staff-node) "MSCX Staff"))))
+    (list :voice voice
+          :tree (om::tree voice)
+          :tempo (om::tempo voice)
+          :n-chords (length (om::chords voice))
+          :chord-midics (loop for ch in (om::chords voice) collect (om::lmidic ch)))))
+
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score))))
+;;   (mscx::mscx-staff-debug-data staff state))
+
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (data (loop for measure in (mscx::mscx-measure-nodes staff)
+;;                    collect (mscx::measure-from-mscx measure state))))
+;;   (mscx::mscx-measure-data-list->tree data))
+
