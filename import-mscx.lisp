@@ -137,19 +137,22 @@ v0 supports one MSCX voice per Staff/Measure."
   (let ((voice (mscx-voice-node measure-node)))
     (when voice (mscx-children voice))))
 
-;; debug util
 
-(defun mscx-score-summary (xml-list)
-  "Return a small summary of the MSCX score structure."
-  (let* ((score (mscx-score-node xml-list))
-         (division (and score (mscx-score-division score)))
-         (parts (and score (mscx-part-nodes score)))
-         (staffs (and score (mscx-staff-nodes score))))
-    (list :division division
-          :parts (length parts)
-          :staffs (length staffs)
-          :measures-per-staff (loop for staff in staffs collect (length (mscx-measure-nodes staff)))
-          :staff-ids (loop for staff in staffs collect (mscx-staff-id staff)))))
+;;; ------------------------------------------------------------
+;;; Voice item predicates
+;;; ------------------------------------------------------------
 
-;; (mscx-score-summary om::x)
-;; (:division 480 :parts 1 :staffs 1 :measures-per-staff (1) :staff-ids ("1"))
+(defun mscx-chord-p (node) (mscx-tag-equal node :|Chord|))
+(defun mscx-rest-p (node) (mscx-tag-equal node :|Rest|))
+(defun mscx-note-event-p (node) (or (mscx-chord-p node) (mscx-rest-p node)))
+(defun mscx-timesig-p (node) (mscx-tag-equal node :|TimeSig|))
+(defun mscx-tempo-p (node) (mscx-tag-equal node :|Tempo|))
+(defun mscx-clef-p (node) (mscx-tag-equal node :|Clef|))
+(defun mscx-tuplet-p (node) (mscx-tag-equal node :|Tuplet|))
+(defun mscx-end-tuplet-p (node) (mscx-tag-equal node :|endTuplet|))
+(defun mscx-barline-p (node) (mscx-tag-equal node :|BarLine|))
+(defun mscx-stafftext-p (node) (mscx-tag-equal node :|StaffText|))
+(defun mscx-dynamic-p (node) (mscx-tag-equal node :|Dynamic|))
+(defun mscx-articulation-p (node) (mscx-tag-equal node :|Articulation|))
+(defun mscx-fermata-p (node) (mscx-tag-equal node :|Fermata|))
+
