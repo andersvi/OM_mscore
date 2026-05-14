@@ -346,3 +346,103 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
 ;;   
 ;; -> (:measure-index 0 :signature (4 4) :tempo 60
 ;;  :items (:clef :timesig :tempo :chord :stafftext :chord :chord :chord :barline))
+
+
+;;; ------------------------------------------------------------
+;;; Note / chord / rest decoding
+;;; ------------------------------------------------------------
+
+(defstruct mscx-decoded-note
+  midic
+  velocity
+  tpc)
+
+(defstruct mscx-decoded-event
+  type        ; :chord or :rest
+  duration    ; integer ticks
+  notes       ; list of mscx-decoded-note, NIL for rests
+  source)     ; original MSCX node, useful for later extras/debug
+
+(defun mscx-note-pitch (note-node)
+  "Return MSCX MIDI pitch number, e.g. 60 for middle C."
+  (mscx-child-number note-node :|pitch| nil))
+
+(defun mscx-note-midic (note-node)
+  "Return OM midic from MSCX pitch."
+  (let ((pitch (mscx-note-pitch note-node)))
+    (when pitch (* 100 pitch))))
+
+(defun mscx-note-velocity (note-node &optional (default 100))
+  (mscx-child-number note-node :|velocity| default))
+
+(defun mscx-note-tpc (note-node)
+  (mscx-child-number note-node :|tpc| nil))
+
+(defun decode-mscx-note (note-node)
+  (make-mscx-decoded-note
+   :midic (mscx-note-midic note-node)
+   :velocity (mscx-note-velocity note-node)
+   :tpc (mscx-note-tpc note-node)))
+
+(defun decode-mscx-chord (chord-node division signature)
+  (make-mscx-decoded-event
+   :type :chord
+   :duration (mscx-duration-ticks chord-node division signature)
+   :notes (loop for note in (mscx-children-named chord-node :|Note|)
+                collect (decode-mscx-note note))
+   :source chord-node))
+
+(defun decode-mscx-rest (rest-node division signature)
+  (make-mscx-decoded-event
+   :type :rest
+   :duration (mscx-duration-ticks rest-node division signature)
+   :notes nil
+   :source rest-node))
+
+(defun decode-mscx-event (event-node division signature)
+  (cond ((mscx-chord-p event-node) (decode-mscx-chord event-node division signature))
+        ((mscx-rest-p event-node) (decode-mscx-rest event-node division signature))
+        (t (error "Not an MSCX note event: ~S" event-node))))
+
+(defun mscx-decoded-chord->om-chord (decoded-event)
+  "Convert a decoded :chord event to an OM chord."
+  (unless (eq (mscx-decoded-event-type decoded-event) :chord)
+    (error "Not a decoded chord event: ~S" decoded-event))
+  (let* ((notes (mscx-decoded-event-notes decoded-event))
+         (midics (remove nil (mapcar #'mscx-decoded-note-midic notes)))
+         (vels (remove nil (mapcar #'mscx-decoded-note-velocity notes))))
+    (make-instance 'om::chord :lmidic midics :lvel vels)))
+
+;; debug events
+
+(defun mscx-decode-measure-events (measure-node state)
+  "Decode Chord/Rest events in MEASURE-NODE, ignoring other voice items."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (division (mscx-import-state-division state)))
+    (setf (mscx-import-state-signature state) signature)
+    (loop for item in (mscx-voice-children measure-node)
+          when (mscx-note-event-p item)
+          collect (decode-mscx-event item division signature))))
+
+(let* ((score (mscx::mscx-score-node om::x))
+       (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+       (staff (first (mscx::mscx-staff-nodes score)))
+       (measure (first (mscx::mscx-measure-nodes staff))))
+  (mapcar #'(lambda (ev)
+              (list :type (mscx::mscx-decoded-event-type ev)
+                    :duration (mscx::mscx-decoded-event-duration ev)
+                    :midics (mapcar #'mscx::mscx-decoded-note-midic
+                                    (mscx::mscx-decoded-event-notes ev))
+                    :vels (mapcar #'mscx::mscx-decoded-note-velocity
+                                  (mscx::mscx-decoded-event-notes ev))
+                    :tpcs (mapcar #'mscx::mscx-decoded-note-tpc
+                                  (mscx::mscx-decoded-event-notes ev))))
+          (mscx::mscx-decode-measure-events measure state)))
+
+
+;; ((:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14))
+;;  (:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14))
+;;  (:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14))
+;;  (:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14)))
+
+
