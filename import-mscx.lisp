@@ -446,3 +446,72 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
 ;;  (:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14)))
 
 
+;;; ------------------------------------------------------------
+;;; Measure decoding -> OM chords + rhythm tree
+;;; ------------------------------------------------------------
+
+(defstruct mscx-measure-data
+  signature
+  tree
+  chords
+  tempo
+  division)
+
+(defun mscx-decoded-event-pulse (decoded-event)
+  "Return positive pulse for chords, negative pulse for rests."
+  (let ((dur (mscx-decoded-event-duration decoded-event)))
+    (if (eq (mscx-decoded-event-type decoded-event) :rest) (- dur) dur)))
+
+(defun mscx-note-event->om-chord-or-nil (decoded-event)
+  "Return OM chord for decoded chord events, NIL for rests."
+  (when (eq (mscx-decoded-event-type decoded-event) :chord)
+    (mscx-decoded-chord->om-chord decoded-event)))
+
+
+;; defined in "projects/musicproject/import-export/import-mxml-new.lisp":
+;; om::get-tree
+;; om::make-tree-builder
+;; om::add-new-pulse
+
+(defun measure-from-mscx (measure-node state)
+  "Decode one MSCX measure.
+
+Returns an MSCX-MEASURE-DATA struct."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (division (mscx-import-state-division state))
+         (tempo (mscx-measure-tempo-bpm measure-node))
+         (tree-builder (om::make-tree-builder))		    ;from import-mxml-new.lisp
+         (chords nil))
+    (setf (mscx-import-state-signature state) signature)
+    ;; v0.0.1: Chord/Rest only. Tuplet/endTuplet are handled further down
+    (loop for item in (mscx-voice-children measure-node) do
+          (when (mscx-note-event-p item)
+            (let* ((decoded (decode-mscx-event item division signature))
+                   (pulse (mscx-decoded-event-pulse decoded))
+                   (om-chord (mscx-note-event->om-chord-or-nil decoded)))
+	      (om::add-new-pulse tree-builder pulse)	    ;from import-mxml-new.lisp
+              (when om-chord (push om-chord chords)))))
+    (make-mscx-measure-data :signature signature
+                            :tree (om::get-tree tree-builder) ;from import-mxml-new.lisp
+                            :chords (reverse chords)
+                            :tempo tempo
+                            :division division)))
+
+;; debug measure data
+
+(defun mscx-measure-debug-data (measure-node state)
+  "Return readable measure data for quick REPL testing."
+  (let ((data (measure-from-mscx measure-node state)))
+    (list :signature (mscx-measure-data-signature data)
+          :tree (mscx-measure-data-tree data)
+          :tempo (mscx-measure-data-tempo data)
+          :division (mscx-measure-data-division data)
+          :n-chords (length (mscx-measure-data-chords data))
+          :chord-midics (loop for ch in (mscx-measure-data-chords data) collect (om::lmidic ch))
+          :chord-vels (loop for ch in (mscx-measure-data-chords data) collect (om::lvel ch)))))
+
+(let* ((score (mscx::mscx-score-node om::x))
+       (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+       (staff (first (mscx::mscx-staff-nodes score)))
+       (measure (first (mscx::mscx-measure-nodes staff))))
+  (mscx::mscx-measure-debug-data measure state))
