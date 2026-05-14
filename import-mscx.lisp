@@ -473,6 +473,69 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
 ;; om::make-tree-builder
 ;; om::add-new-pulse
 
+
+;;; ------------------------------------------------------------
+;;; Tuplets
+;;; ------------------------------------------------------------
+
+(defstruct mscx-active-tuplet
+  id
+  time-info
+  remaining-events)
+
+(defun mscx-tuplet-normal-notes (tuplet-node)
+  (mscx-child-number tuplet-node :|normalNotes| nil))
+
+(defun mscx-tuplet-actual-notes (tuplet-node)
+  (mscx-child-number tuplet-node :|actualNotes| nil))
+
+(defun mscx-tuplet-base-note (tuplet-node)
+  (mscx-child-text tuplet-node :|baseNote| nil))
+
+(defun mscx-tuplet-number-text (tuplet-node)
+  (let ((number-node (mscx-child tuplet-node :|Number|)))
+    (and number-node (mscx-child-text number-node :|text| nil))))
+
+(defun mscx-tuplet-id (tuplet-node &optional (fallback "1"))
+  "Return a tuplet id for tree-builder.
+
+MSCX export currently has no explicit tuplet id, so use printed Number/text or FALLBACK."
+  (or (mscx-tuplet-number-text tuplet-node) fallback))
+
+(defun mscx-tuplet-time-info (tuplet-node)
+  "Return tree-builder time-info as (actual normal), e.g. 3:2 -> (3 2)."
+  (let ((actual (mscx-tuplet-actual-notes tuplet-node))
+        (normal (mscx-tuplet-normal-notes tuplet-node)))
+    (when (and actual normal)
+      (list actual normal))))
+
+(defun mscx-active-tuplet-scale (tuplet)
+  "Return actual-time scale for one active tuplet.
+
+For 3:2, written durations must be scaled by 2/3."
+  (let* ((time-info (mscx-active-tuplet-time-info tuplet))
+         (actual (first time-info))
+         (normal (second time-info)))
+    (/ normal actual)))
+
+(defun mscx-active-tuplets-scale (active-tuplets)
+  "Return combined actual-time scale for nested tuplets."
+  (loop for tuplet in active-tuplets
+        for scale = (mscx-active-tuplet-scale tuplet)
+        for total = scale then (* total scale)
+        finally (return (or total 1))))
+
+(defun mscx-scale-pulse-for-active-tuplets (pulse active-tuplets)
+  "Scale written MSCX pulse to actual rhythmic pulse.
+
+PULSE keeps its sign: positive chord, negative rest."
+  (let* ((sign (if (minusp pulse) -1 1))
+         (scaled (* (abs pulse) (mscx-active-tuplets-scale active-tuplets))))
+    (* sign (round scaled))))
+
+
+
+
 (defun measure-from-mscx (measure-node state)
   "Decode one MSCX measure.
 
@@ -480,22 +543,64 @@ Returns an MSCX-MEASURE-DATA struct."
   (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
          (division (mscx-import-state-division state))
          (tempo (mscx-measure-tempo-bpm measure-node))
-         (tree-builder (om::make-tree-builder))		    ;from import-mxml-new.lisp
-         (chords nil))
+         (tree-builder (om::make-tree-builder))
+         (chords nil)
+         (active-tuplets nil)
+         (next-tuplet-id 0))
     (setf (mscx-import-state-signature state) signature)
-    ;; v0.0.1: Chord/Rest only. Tuplet/endTuplet are handled further down
-    (loop for item in (mscx-voice-children measure-node) do
-          (when (mscx-note-event-p item)
-            (let* ((decoded (decode-mscx-event item division signature))
-                   (pulse (mscx-decoded-event-pulse decoded))
-                   (om-chord (mscx-note-event->om-chord-or-nil decoded)))
-	      (om::add-new-pulse tree-builder pulse)	    ;from import-mxml-new.lisp
-              (when om-chord (push om-chord chords)))))
+
+    (labels ((start-mscx-tuplet (tuplet-node)
+               (let* ((time-info (mscx-tuplet-time-info tuplet-node))
+                      (actual (mscx-tuplet-actual-notes tuplet-node))
+                      (id (or (mscx-tuplet-id tuplet-node nil)
+                              (format nil "mscx-tuplet-~D" (incf next-tuplet-id)))))
+                 (when (and time-info actual)
+                   (om::new-tuplet tree-builder id time-info)
+                   (push (make-mscx-active-tuplet :id id :time-info time-info :remaining-events actual)
+                         active-tuplets))))
+
+             (finish-current-tuplet ()
+               (when active-tuplets
+                 (om::pop-tuplet tree-builder)
+                 (pop active-tuplets)))
+
+             (count-note-event-in-active-tuplet ()
+               (when active-tuplets
+                 (decf (mscx-active-tuplet-remaining-events (car active-tuplets)))
+                 (when (<= (mscx-active-tuplet-remaining-events (car active-tuplets)) 0)
+                   (finish-current-tuplet)))))
+
+      (loop for item in (mscx-voice-children measure-node) do
+            (cond
+              ((mscx-tuplet-p item)
+               (start-mscx-tuplet item))
+
+              ((mscx-note-event-p item)
+	       (let* ((decoded (decode-mscx-event item division signature))
+		      (written-pulse (mscx-decoded-event-pulse decoded))
+		      (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
+		      (om-chord (mscx-note-event->om-chord-or-nil decoded)))
+		 (om::add-new-pulse tree-builder pulse)
+		 (when om-chord (push om-chord chords))
+		 (count-note-event-in-active-tuplet)))
+
+
+              ((mscx-end-tuplet-p item)
+               ;; For MSCX files that contain explicit endTuplet.
+               (finish-current-tuplet)))))
+
+    (when active-tuplets
+      (warn "Unclosed MSCX tuplets in measure ~A: ~S"
+            (mscx-import-state-measure-index state)
+            (mapcar #'mscx-active-tuplet-id active-tuplets)))
+
     (make-mscx-measure-data :signature signature
-                            :tree (om::get-tree tree-builder) ;from import-mxml-new.lisp
+                            :tree (om::get-tree tree-builder)
                             :chords (reverse chords)
                             :tempo tempo
                             :division division)))
+
+
 
 ;; debug measure data
 
@@ -614,6 +719,27 @@ For now all MSCX tempos are normalized to quarter = BPM."
     (score-from-mscx score)))
 
 
+(defun mscx-import-summary (path)
+  (let ((p (om::import-mscx path)))
+    (loop for voice in (om::inside p)
+          for i from 1
+          collect (list :voice i
+                        :tree (om::tree voice)
+                        :tempo (om::tempo voice)
+                        :n-chords (length (om::chords voice))
+                        :midics (mapcar #'om::lmidic (om::chords voice))))))
+
+;; (mscx-score-item-summary (om::om-list-from-xml-file "mscores/beams.mscx"))
+;; -> ((:staff-id "1" :measures ((:clef :timesig :tempo :chord :chord :chord :chord :chord :chord :chord :tuplet :chord :chord :chord :chord :barline))))
+
+
+;; (mscx-import-summary "mscores/articulations_text_extras.mscx")
+;; (mscx-import-summary "mscores/articulations_text_extras.mscx")
+;; (mscx-import-summary "mscores/tcp.mscx")
+;; (mscx-import-summary "mscores/micro_EDO48.mscx")
+;; (mscx-import-summary "mscores/from_omorch.mscx")
+;; (mscx-import-summary "mscores/time_tempo.mscx")
+
 
 ;; OM interface
 
@@ -632,7 +758,7 @@ For now all MSCX tempos are normalized to quarter = BPM."
     (when file
       (mscx::read-mscx-list (om-list-from-xml-file file)))))
 
-;; (setq p (import-mscx "/home/andersvi/prosjekter/OM/OM_MSCORE_EXPORT/mscores/articulations_text_extras.mscx"))
+;; (setq p (import-mscx "mscores/articulations_text_extras.mscx"))
 
 ;; (length (inside p))
 ;; ;; => 1
@@ -641,3 +767,17 @@ For now all MSCX tempos are normalized to quarter = BPM."
 
 ;; (length (om::chords (first (inside p))))
 ;; ;; => 4
+
+;; (setq p (import-mscx "mscores/articulations_text_extras.mscx"))
+;; (setq p (import-mscx "mscores/tcp.mscx"))
+;; (setq p (import-mscx "mscores/micro_EDO48.mscx"))
+;; (setq p (import-mscx "mscores/from_omorch.mscx"))
+;; (setq p (import-mscx "mscores/time_tempo.mscx"))
+
+;; (length (inside p))
+;; (mapcar #'tree (inside p))
+;; (mapcar #'(lambda (v) (length (chords v))) (inside p))
+;; (mapcar #'tempo (inside p))
+
+;; debug util:
+
