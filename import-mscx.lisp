@@ -210,5 +210,73 @@ v0 supports one MSCX voice per Staff/Measure."
 
 
 ;; (mscx::mscx-score-item-summary om::x)
-;; ((:staff-id "1" :measures ((:clef :timesig :tempo :chord :stafftext :chord :chord :chord :barline))))
+;; - ((:staff-id "1" :measures ((:clef :timesig :tempo :chord :stafftext :chord :chord :chord :barline))))
 
+
+;;; ------------------------------------------------------------
+;;; Durations
+;;; ------------------------------------------------------------
+
+(defun mscx-duration-type-factor (type)
+  "Return duration as a factor of one quarter note.
+
+MSCX Division is the number of ticks in one quarter note."
+  (cond ((null type) nil)
+        ((string= type "measure") :measure)
+        ((string= type "longa") 16)
+        ((string= type "breve") 8)
+        ((string= type "whole") 4)
+        ((string= type "half") 2)
+        ((string= type "quarter") 1)
+        ((or (string= type "eighth") (string= type "8th")) 1/2)
+        ((string= type "16th") 1/4)
+        ((string= type "32nd") 1/8)
+        ((string= type "64th") 1/16)
+        ((string= type "128th") 1/32)
+        ((string= type "256th") 1/64)
+        (t (error "Unsupported MSCX durationType: ~S" type))))
+
+(defun mscx-dots-factor (dots)
+  "Return dotted-duration multiplier.
+
+0 -> 1, 1 -> 3/2, 2 -> 7/4, 3 -> 15/8."
+  (if (or (null dots) (= dots 0)) 1
+      (- 2 (/ 1 (expt 2 dots)))))
+
+(defun mscx-measure-duration-factor (signature)
+  "Return full measure duration as quarter-note factor.
+
+Example: (4 4) -> 4, (3 4) -> 3, (6 8) -> 3."
+  (* 4 (/ (first signature) (second signature))))
+
+(defun mscx-event-dots (event-node)
+  (mscx-child-number event-node :|dots| 0))
+
+(defun mscx-event-duration-type (event-node)
+  (mscx-child-text event-node :|durationType| nil))
+
+(defun mscx-duration-ticks (event-node division signature)
+  "Return EVENT-NODE duration in integer ticks.
+
+DIVISION is ticks per quarter note."
+  (let* ((type (mscx-event-duration-type event-node))
+         (factor (mscx-duration-type-factor type))
+         (dots (mscx-event-dots event-node)))
+    (cond ((eq factor :measure)
+           (round (* division (mscx-measure-duration-factor signature))))
+          (factor
+           (round (* division factor (mscx-dots-factor dots))))
+          (t
+           (error "MSCX event without durationType: ~S" event-node)))))
+
+
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (first (mscx::mscx-measure-nodes staff)))
+;;        (chord (find-if #'mscx::mscx-chord-p (mscx::mscx-voice-children measure))))
+;;   (mscx::mscx-duration-ticks chord 480 '(4 4)))
+;; ;; => 480
+;; (mscx::mscx-duration-type-factor "measure")
+;; ;; => :MEASURE
+;; (mscx::mscx-measure-duration-factor '(6 8))
+;; ;; => 3
