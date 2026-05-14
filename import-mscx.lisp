@@ -280,3 +280,41 @@ DIVISION is ticks per quarter note."
 ;; ;; => :MEASURE
 ;; (mscx::mscx-measure-duration-factor '(6 8))
 ;; ;; => 3
+
+
+;;; ------------------------------------------------------------
+;;; Time signatures and tempo
+;;; ------------------------------------------------------------
+
+(defun mscx-timesig (timesig-node &optional (default '(4 4)))
+  "Return time signature as (N D), e.g. (4 4)."
+  (if timesig-node
+      (list (mscx-child-number timesig-node :|sigN| (first default))
+            (mscx-child-number timesig-node :|sigD| (second default)))
+      default))
+
+(defun mscx-measure-timesig (measure-node current-signature)
+  "Return TimeSig found in MEASURE-NODE, or CURRENT-SIGNATURE."
+  (let* ((voice (mscx-voice-node measure-node))
+         (timesig (and voice (find-if #'mscx-timesig-p (mscx-children voice)))))
+    (mscx-timesig timesig current-signature)))
+
+(defun mscx-tempo-raw (tempo-node)
+  "Return raw MSCX tempo value.
+
+MuseScore stores tempo as quarter-notes per second in <tempo>."
+  (mscx-child-number tempo-node :|tempo| nil))
+
+(defun mscx-tempo-bpm (tempo-node)
+  "Return BPM from MSCX Tempo node.
+
+In MuseScore, <tempo>1</tempo> means quarter = 60."
+  (let ((raw (mscx-tempo-raw tempo-node)))
+    (when raw (* 60 raw))))
+
+(defun mscx-measure-tempo-bpm (measure-node)
+  "Return first tempo marking in measure as BPM, or NIL."
+  (let* ((voice (mscx-voice-node measure-node))
+         (tempo (and voice (find-if #'mscx-tempo-p (mscx-children voice)))))
+    (and tempo (mscx-tempo-bpm tempo))))
+
