@@ -94,3 +94,46 @@
 ;; (mscx::mscx-child-text (second x) :|Division|)
 ;; ;; => "480"
 
+
+;;; ------------------------------------------------------------
+;;; Score / staff / measure traversal
+;;; ------------------------------------------------------------
+
+(defun mscx-score-node (xml-list)
+  "Return the Score node from the top-level MSCX XML list."
+  (find-if #'(lambda (node) (mscx-tag-equal node :|Score|)) xml-list))
+
+(defun mscx-score-division (score-node &optional (default 480))
+  "Return MSCX Division value. MuseScore normally uses 480."
+  (mscx-child-number score-node :|Division| default))
+
+(defun mscx-part-nodes (score-node)
+  "Return Part nodes from Score. Mostly informational for v0."
+  (mscx-children-named score-node :|Part|))
+
+(defun mscx-staff-nodes (score-node)
+  "Return Staff nodes that contain measures.
+
+This intentionally ignores Staff nodes inside Part definitions."
+  (remove-if-not #'(lambda (node)
+                     (and (mscx-tag-equal node :|Staff|)
+                          (mscx-children-named node :|Measure|)))
+                 (mscx-children score-node)))
+
+(defun mscx-staff-id (staff-node)
+  (mscx-attr staff-node :|id| nil))
+
+(defun mscx-measure-nodes (staff-node)
+  (mscx-children-named staff-node :|Measure|))
+
+(defun mscx-voice-node (measure-node)
+  "Return first voice node in MEASURE-NODE.
+
+v0 supports one MSCX voice per Staff/Measure."
+  (mscx-child measure-node :|voice|))
+
+(defun mscx-voice-children (measure-node)
+  "Return children of the first voice in MEASURE-NODE."
+  (let ((voice (mscx-voice-node measure-node)))
+    (when voice (mscx-children voice))))
+
