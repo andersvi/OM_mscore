@@ -585,3 +585,59 @@ For now all MSCX tempos are normalized to quarter = BPM."
 ;;                    collect (mscx::measure-from-mscx measure state))))
 ;;   (mscx::mscx-measure-data-list->tree data))
 
+
+
+;;; ------------------------------------------------------------
+;;; Score -> OM poly
+;;; ------------------------------------------------------------
+
+(defun mscx-staff-name (staff-node)
+  "Return a simple Staff name for v0."
+  (or (mscx-staff-id staff-node) "MSCX Staff"))
+
+(defun score-from-mscx (score-node)
+  "Decode MSCX Score into OM poly."
+  (let* ((division (mscx-score-division score-node))
+         (staffs (mscx-staff-nodes score-node))
+         (voices (loop for staff in staffs
+                       collect (staff-from-mscx
+                                staff
+                                (make-mscx-import-state :division division)
+                                :name (mscx-staff-name staff)))))
+    (make-instance 'om::poly :voices voices)))
+
+(defun read-mscx-list (xml-list)
+  "Decode an om-list-from-xml-file MSCX list into OM poly."
+  (let ((score (mscx-score-node xml-list)))
+    (unless score
+      (error "No Score node found in MSCX list."))
+    (score-from-mscx score)))
+
+
+
+;; OM interface
+
+(in-package :om)
+
+(defmethod! import-mscx ((path t))
+  :icon 352
+  :indoc '("MSCX file path")
+  :initvals '(nil)
+  :doc "Import a MuseScore MSCX file as an OM poly object."
+  (let ((file (or (and path (probe-file path))
+                  (om-choose-file-dialog
+                   :prompt "Choose MuseScore MSCX file"
+                   :button-string "Import"
+                   :types '("MuseScore MSCX" "*.mscx" "All Documents" "*.*")))))
+    (when file
+      (mscx::read-mscx-list (om-list-from-xml-file file)))))
+
+;; (setq p (import-mscx "/home/andersvi/prosjekter/OM/OM_MSCORE_EXPORT/mscores/articulations_text_extras.mscx"))
+
+;; (length (inside p))
+;; ;; => 1
+;; (om::tree (first (inside p)))
+;; ;; => typisk (1 (((4 4) (1 1 1 1))))
+
+;; (length (om::chords (first (inside p))))
+;; ;; => 4
