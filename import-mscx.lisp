@@ -318,3 +318,31 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
          (tempo (and voice (find-if #'mscx-tempo-p (mscx-children voice)))))
     (and tempo (mscx-tempo-bpm tempo))))
 
+;;; ------------------------------------------------------------
+;;; Import state
+;;; ------------------------------------------------------------
+
+(defstruct mscx-import-state
+  (division 480)
+  (signature '(4 4))
+  (measure-index 0)
+  tempos)
+
+(defun mscx-measure-basic-info (measure-node state)
+  "Return basic measure info and update signature in STATE."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (tempo (mscx-measure-tempo-bpm measure-node)))
+    (setf (mscx-import-state-signature state) signature)
+    (list :measure-index (mscx-import-state-measure-index state)
+          :signature signature
+          :tempo tempo
+          :items (mscx-measure-item-kinds measure-node))))
+
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (first (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-basic-info measure state))
+;;   
+;; -> (:measure-index 0 :signature (4 4) :tempo 60
+;;  :items (:clef :timesig :tempo :chord :stafftext :chord :chord :chord :barline))
