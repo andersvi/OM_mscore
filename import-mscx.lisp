@@ -156,3 +156,59 @@ v0 supports one MSCX voice per Staff/Measure."
 (defun mscx-articulation-p (node) (mscx-tag-equal node :|Articulation|))
 (defun mscx-fermata-p (node) (mscx-tag-equal node :|Fermata|))
 
+
+
+;;; ------------------------------------------------------------
+;;; Debug helpers
+;;; ------------------------------------------------------------
+
+(defun mscx-score-summary (xml-list)
+  "Return a small summary of the MSCX score structure."
+  (let* ((score (mscx-score-node xml-list))
+         (division (and score (mscx-score-division score)))
+         (parts (and score (mscx-part-nodes score)))
+         (staffs (and score (mscx-staff-nodes score))))
+    (list :division division
+          :parts (length parts)
+          :staffs (length staffs)
+          :measures-per-staff (loop for staff in staffs collect (length (mscx-measure-nodes staff)))
+          :staff-ids (loop for staff in staffs collect (mscx-staff-id staff)))))
+
+;; (mscx-score-summary om::x)
+;; (:division 480 :parts 1 :staffs 1 :measures-per-staff (1) :staff-ids ("1"))
+
+
+(defun mscx-voice-item-kind (node)
+  (cond ((mscx-chord-p node) :chord)
+        ((mscx-rest-p node) :rest)
+        ((mscx-timesig-p node) :timesig)
+        ((mscx-tempo-p node) :tempo)
+        ((mscx-clef-p node) :clef)
+        ((mscx-tuplet-p node) :tuplet)
+        ((mscx-end-tuplet-p node) :end-tuplet)
+        ((mscx-barline-p node) :barline)
+        ((mscx-stafftext-p node) :stafftext)
+        ((mscx-dynamic-p node) :dynamic)
+        ((mscx-articulation-p node) :articulation)
+        ((mscx-fermata-p node) :fermata)
+        (t (mscx-node-tag node))))
+
+(defun mscx-measure-item-kinds (measure-node)
+  "Return symbolic item kinds for the first voice in MEASURE-NODE."
+  (loop for item in (mscx-voice-children measure-node) collect (mscx-voice-item-kind item)))
+
+(defun mscx-staff-item-summary (staff-node)
+  "Return one item-kind list per measure."
+  (loop for measure in (mscx-measure-nodes staff-node) collect (mscx-measure-item-kinds measure)))
+
+(defun mscx-score-item-summary (xml-list)
+  "Return voice item summaries for all staffs."
+  (let* ((score (mscx-score-node xml-list))
+         (staffs (and score (mscx-staff-nodes score))))
+    (loop for staff in staffs collect (list :staff-id (mscx-staff-id staff)
+                                            :measures (mscx-staff-item-summary staff)))))
+
+
+;; (mscx::mscx-score-item-summary om::x)
+;; ((:staff-id "1" :measures ((:clef :timesig :tempo :chord :stafftext :chord :chord :chord :barline))))
+
