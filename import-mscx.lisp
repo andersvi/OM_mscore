@@ -1,10 +1,4 @@
-;;;========================
-;;; OpenMusic import .mscx Musescore files
-;;;========================
-;;;
-;;; Anders Vinjar - 2026
-;;; 
-;;; Time-stamp: <2026-05-13 11:15:14 andersvi>
+
 ;;;
 ;;;
 ;;; ------------------------------------------------------------
@@ -25,11 +19,13 @@
 ;;; ------------------------------------------------------------
 
 (defun mscx-node-tag (node)
-  "Return the tag symbol of a node from om-list-from-xml-file."
-  (cond
-    ((and (consp node) (consp (car node))) (caar node))
-    ((consp node) (car node))
-    (t nil)))
+  "Return the tag symbol of a node from om-list-from-xml-file.
+
+Self-closing XML tags may be represented as a bare symbol, e.g. :|endTuplet|."
+  (cond ((and (consp node) (consp (car node))) (caar node))
+        ((consp node) (car node))
+        ((symbolp node) node)
+        (t nil)))
 
 (defun mscx-node-attrs (node)
   "Return attribute plist from node, or NIL."
@@ -38,10 +34,9 @@
 
 (defun mscx-node-body (node)
   "Return children/text body of NODE."
-  (cond
-    ((and (consp node) (consp (car node))) (cdr node))
-    ((consp node) (cdr node))
-    (t nil)))
+  (cond ((and (consp node) (consp (car node))) (cdr node))
+        ((consp node) (cdr node))
+        (t nil)))
 
 (defun mscx-tag-equal (node tag)
   (and node
@@ -49,8 +44,12 @@
               (om::interne tag))))
 
 (defun mscx-children (node)
-  "Return child nodes only, ignoring direct string text."
-  (remove-if-not #'consp (mscx-node-body node)))
+  "Return child nodes only, ignoring direct string text.
+
+Includes bare symbol children, since self-closing XML tags such as <endTuplet/>
+may be represented as :|endTuplet| by om-list-from-xml-file."
+  (remove-if-not #'(lambda (x) (or (consp x) (symbolp x)))
+                 (mscx-node-body node)))
 
 (defun mscx-child (node tag)
   (find tag (mscx-children node)
@@ -93,7 +92,6 @@
 
 ;; (mscx::mscx-child-text (second x) :|Division|)
 ;; ;; => "480"
-
 
 ;;; ------------------------------------------------------------
 ;;; Score / staff / measure traversal
@@ -149,7 +147,9 @@ v0 supports one MSCX voice per Staff/Measure."
 (defun mscx-tempo-p (node) (mscx-tag-equal node :|Tempo|))
 (defun mscx-clef-p (node) (mscx-tag-equal node :|Clef|))
 (defun mscx-tuplet-p (node) (mscx-tag-equal node :|Tuplet|))
+
 (defun mscx-end-tuplet-p (node) (mscx-tag-equal node :|endTuplet|))
+
 (defun mscx-barline-p (node) (mscx-tag-equal node :|BarLine|))
 (defun mscx-stafftext-p (node) (mscx-tag-equal node :|StaffText|))
 (defun mscx-dynamic-p (node) (mscx-tag-equal node :|Dynamic|))
@@ -424,20 +424,20 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
           when (mscx-note-event-p item)
           collect (decode-mscx-event item division signature))))
 
-(let* ((score (mscx::mscx-score-node om::x))
-       (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
-       (staff (first (mscx::mscx-staff-nodes score)))
-       (measure (first (mscx::mscx-measure-nodes staff))))
-  (mapcar #'(lambda (ev)
-              (list :type (mscx::mscx-decoded-event-type ev)
-                    :duration (mscx::mscx-decoded-event-duration ev)
-                    :midics (mapcar #'mscx::mscx-decoded-note-midic
-                                    (mscx::mscx-decoded-event-notes ev))
-                    :vels (mapcar #'mscx::mscx-decoded-note-velocity
-                                  (mscx::mscx-decoded-event-notes ev))
-                    :tpcs (mapcar #'mscx::mscx-decoded-note-tpc
-                                  (mscx::mscx-decoded-event-notes ev))))
-          (mscx::mscx-decode-measure-events measure state)))
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (first (mscx::mscx-measure-nodes staff))))
+;;   (mapcar #'(lambda (ev)
+;;               (list :type (mscx::mscx-decoded-event-type ev)
+;;                     :duration (mscx::mscx-decoded-event-duration ev)
+;;                     :midics (mapcar #'mscx::mscx-decoded-note-midic
+;;                                     (mscx::mscx-decoded-event-notes ev))
+;;                     :vels (mapcar #'mscx::mscx-decoded-note-velocity
+;;                                   (mscx::mscx-decoded-event-notes ev))
+;;                     :tpcs (mapcar #'mscx::mscx-decoded-note-tpc
+;;                                   (mscx::mscx-decoded-event-notes ev))))
+;;           (mscx::mscx-decode-measure-events measure state)))
 
 
 ;; ((:type :chord :duration 480 :midics (6000) :vels (100) :tpcs (14))
@@ -457,6 +457,11 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
   tempo
   division)
 
+;; set to nil to sometimes get easier debugging:
+(defparameter *mscx-import-use-beam-spans* t
+  "If true, use conservative BeamMode spans as pure grouping in imported rhythm trees.")
+
+
 (defun mscx-decoded-event-pulse (decoded-event)
   "Return positive pulse for chords, negative pulse for rests."
   (let ((dur (mscx-decoded-event-duration decoded-event)))
@@ -473,15 +478,52 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
 ;; om::make-tree-builder
 ;; om::add-new-pulse
 
+;;; ------------------------------------------------------------
+;;; Tuplet / beam grouping
+;;; ------------------------------------------------------------
 
-;;; ------------------------------------------------------------
-;;; Tuplets
-;;; ------------------------------------------------------------
+(defun mscx-measure-has-end-tuplets-p (measure-node)
+  "Return true if MEASURE-NODE contains explicit endTuplet markers."
+  (some #'mscx-end-tuplet-p (mscx-voice-children measure-node)))
+
+(defun mscx-event-beam-mode (event-node)
+  "Return MSCX BeamMode string for Chord/Rest, or NIL."
+  (mscx-child-text event-node :|BeamMode| nil))
+
+(defun mscx-beam-begin-p (beam-mode)
+  "Primary beam begin.
+
+For now, only treat plain begin as structural grouping.
+Values like begin16 are partial/secondary beams and are ignored in v0."
+  (and beam-mode (string= beam-mode "begin")))
+
+(defun mscx-beam-end-p (beam-mode)
+  "Primary beam end.
+
+For now, only treat plain end as structural grouping."
+  (and beam-mode (string= beam-mode "end")))
+
 
 (defstruct mscx-active-tuplet
   id
   time-info
   remaining-events)
+
+;;; ------------------------------------------------------------
+;;; Rhythm tokens for later beam/group reconstruction
+;;; ------------------------------------------------------------
+
+(defstruct mscx-rhythm-token
+  index             ; index in MSCX voice children
+  order             ; note/rest event order inside measure
+  kind              ; :chord or :rest
+  duration-type
+  beam-mode
+  written-pulse     ; ticks before tuplet scaling
+  actual-pulse      ; exact pulse after tuplet scaling
+  tuplet-stack      ; list of time-info, innermost first
+  decoded-event)
+
 
 (defun mscx-tuplet-normal-notes (tuplet-node)
   (mscx-child-number tuplet-node :|normalNotes| nil))
@@ -497,9 +539,10 @@ In MuseScore, <tempo>1</tempo> means quarter = 60."
     (and number-node (mscx-child-text number-node :|text| nil))))
 
 (defun mscx-tuplet-id (tuplet-node &optional (fallback "1"))
-  "Return a tuplet id for tree-builder.
+  "Return printed tuplet label, not a structural id.
 
-MSCX export currently has no explicit tuplet id, so use printed Number/text or FALLBACK."
+Nested tuplets may all print the same number, e.g. \"3\".
+Do not use this as the id passed to tree-builder."
   (or (mscx-tuplet-number-text tuplet-node) fallback))
 
 (defun mscx-tuplet-time-info (tuplet-node)
@@ -528,32 +571,271 @@ For 3:2, written durations must be scaled by 2/3."
 (defun mscx-scale-pulse-for-active-tuplets (pulse active-tuplets)
   "Scale written MSCX pulse to actual rhythmic pulse.
 
-PULSE keeps its sign: positive chord, negative rest."
+PULSE keeps its sign: positive chord, negative rest.
+Return exact rationals when nested tuplets require it. Do not round per event."
   (let* ((sign (if (minusp pulse) -1 1))
          (scaled (* (abs pulse) (mscx-active-tuplets-scale active-tuplets))))
-    (* sign (round scaled))))
+    (* sign scaled)))
 
 
 
+
+
+(defun mscx-denominator (x)
+  (if (rationalp x) (denominator x) 1))
+
+(defun mscx-lcm-list (list)
+  (reduce #'lcm list :initial-value 1))
+
+(defun mscx-duration-denominator-scale (durations)
+  "Return multiplier that converts all rational DURATIONS to integers."
+  (mscx-lcm-list (mapcar #'(lambda (d) (mscx-denominator (abs d))) durations)))
+
+(defun mscx-scale-durations-to-integers (durations)
+  "Return two values: scaled integer durations and scale factor."
+  (let ((scale (mscx-duration-denominator-scale durations)))
+    (values (mapcar #'(lambda (d) (* d scale)) durations)
+            scale)))
+
+(defun mscx-measure-rhythm-tokens (measure-node state)
+  "Return rhythm tokens for one MSCX measure.
+
+This does not build an OM tree. It only decodes Chord/Rest events with exact actual pulses,
+tuplet stack information, and BeamMode. Useful for later beam/group reconstruction."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (division (mscx-import-state-division state))
+         (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
+         (active-tuplets nil)
+         (next-tuplet-id 0)
+         (tokens nil)
+         (event-order 0))
+    (setf (mscx-import-state-signature state) signature)
+    (labels ((start-mscx-tuplet (tuplet-node)
+	       (let* ((time-info (mscx-tuplet-time-info tuplet-node))
+		      (actual (mscx-tuplet-actual-notes tuplet-node))
+		      (id (format nil "mscx-tuplet-~D" (incf next-tuplet-id))))
+		 (when (and time-info actual)
+		   (push (make-mscx-active-tuplet :id id :time-info time-info :remaining-events actual)
+			 active-tuplets))))
+             (finish-current-tuplet ()
+               (when active-tuplets
+                 (pop active-tuplets)))
+             (count-note-event-in-active-tuplet ()
+               (when (and active-tuplets (not explicit-tuplet-ends-p))
+                 (decf (mscx-active-tuplet-remaining-events (car active-tuplets)))
+                 (when (<= (mscx-active-tuplet-remaining-events (car active-tuplets)) 0)
+                   (finish-current-tuplet)))))
+      (loop for item in (mscx-voice-children measure-node)
+            for i from 0 do
+              (cond
+                ((mscx-tuplet-p item) (start-mscx-tuplet item))
+                ((mscx-note-event-p item)
+		 (let* ((decoded (decode-mscx-event item division signature))
+			(written (mscx-decoded-event-pulse decoded))
+			(actual (mscx-scale-pulse-for-active-tuplets written active-tuplets))
+			(kind (mscx-decoded-event-type decoded)))
+		   (push (make-mscx-rhythm-token
+			  :index i
+			  :order event-order
+			  :kind kind
+			  :duration-type (mscx-event-duration-type item)
+			  :beam-mode (mscx-event-beam-mode item)
+			  :written-pulse written
+			  :actual-pulse actual
+			  :tuplet-stack (mapcar #'mscx-active-tuplet-time-info active-tuplets)
+			  :decoded-event decoded)
+			 tokens)
+		   (incf event-order)
+		   (count-note-event-in-active-tuplet)))
+                ((mscx-end-tuplet-p item) (finish-current-tuplet)))))
+    (when active-tuplets
+      (warn "Unclosed MSCX tuplets while tokenizing measure ~A: ~S"
+            (mscx-import-state-measure-index state)
+            (mapcar #'mscx-active-tuplet-id active-tuplets)))
+    (reverse tokens)))
+
+;; (setf mscx::*mscx-import-use-beam-spans* t)
+
+;; (let ((mscx::*mscx-import-use-beam-spans* nil))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+
+;; (let ((mscx::*mscx-import-use-beam-spans* nil))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+;; (let* ((x (om::om-list-from-xml-file "mscores/beams_tuplets_OM.mscx"))
+;;        (score (mscx::mscx-score-node x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (nth 7 (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-rhythm-debug measure state))
+
+;; ((:tuplet-start :id "mscx-tuplet-1" :printed "3" :time-info (3 2) :remaining 3) (:tuplet-start :id "mscx-tuplet-2" :printed "3" :time-info (3 2) :remaining 3) (:i 2 :kind :chord :duration-type "quarter" :beam "begin" :written 480 :actual 640/3 :tuplets ((3 2) (3 2))) (:tuplet-start :id "mscx-tuplet-3" :printed "3" :time-info (3 2) :remaining 3) (:i 4 :kind :chord :duration-type "eighth" :beam "begin" :written 240 :actual 640/9 :tuplets ((3 2) (3 2) (3 2))) (:tuplet-start :id "mscx-tuplet-4" :printed "3" :time-info (3 2) :remaining 3) (:i 6 :kind :chord :duration-type "16th" :beam "begin" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:i 7 :kind :chord :duration-type "16th" :beam "mid" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:i 8 :kind :chord :duration-type "16th" :beam "end" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:tuplet-end :id "mscx-tuplet-4") (:i 9 :kind :chord :duration-type "eighth" :beam "end" :written 240 :actual 640/9 :tuplets ((3 2) (3 2) (3 2))) (:i 10 :kind :chord :duration-type "quarter" :beam "end" :written 480 :actual 1280/9 :tuplets ((3 2) (3 2) (3 2))) (:tuplet-end :id "mscx-tuplet-3") (:i 11 :kind :chord :duration-type "half" :beam nil :written 960 :actual 1280/3 :tuplets ((3 2) (3 2))) (:i 12 :kind :chord :duration-type "half" :beam nil :written 960 :actual 1280/3 :tuplets ((3 2) (3 2))) (:tuplet-end :id "mscx-tuplet-2"))
+
+(defun mscx-rhythm-token-debug-row (token)
+  (list :order (mscx-rhythm-token-order token)
+        :i (mscx-rhythm-token-index token)
+        :kind (mscx-rhythm-token-kind token)
+        :duration-type (mscx-rhythm-token-duration-type token)
+        :beam (mscx-rhythm-token-beam-mode token)
+        :written (mscx-rhythm-token-written-pulse token)
+        :actual (mscx-rhythm-token-actual-pulse token)
+        :tuplets (mscx-rhythm-token-tuplet-stack token)))
+
+(defun mscx-measure-rhythm-token-debug (measure-node state)
+  (mapcar #'mscx-rhythm-token-debug-row
+          (mscx-measure-rhythm-tokens measure-node state)))
+
+
+;;; ------------------------------------------------------------
+;;; Beam span parsing
+;;; ------------------------------------------------------------
+
+(defun mscx-primary-beam-mode-p (beam-mode)
+  (and beam-mode
+       (or (string= beam-mode "begin")
+           (string= beam-mode "mid")
+           (string= beam-mode "end")
+           (string= beam-mode "no"))))
+
+(defun mscx-beam-mode-begin-p (beam-mode)
+  (and beam-mode (string= beam-mode "begin")))
+
+(defun mscx-beam-mode-mid-p (beam-mode)
+  (and beam-mode (string= beam-mode "mid")))
+
+(defun mscx-beam-mode-end-p (beam-mode)
+  (and beam-mode (string= beam-mode "end")))
+
+(defun mscx-beam-mode-no-p (beam-mode)
+  (and beam-mode (string= beam-mode "no")))
+
+(defun mscx-make-beam-span (tokens start-pos end-pos)
+  (let ((start-token (nth start-pos tokens))
+        (end-token (nth end-pos tokens)))
+    (list :start-order (mscx-rhythm-token-order start-token)
+          :end-order (mscx-rhythm-token-order end-token)
+          :start-index (mscx-rhythm-token-index start-token)
+          :end-index (mscx-rhythm-token-index end-token)
+          :length (1+ (- end-pos start-pos)))))
+
+(defun mscx-parse-primary-beam-spans (tokens)
+  "Parse conservative primary beam spans from rhythm TOKENS.
+
+This does not build a tree. It only identifies explicit begin...end spans.
+Nested/secondary beams such as begin16 are ignored for now."
+  (let ((spans nil)
+        (open-start nil))
+    (labels ((close-span (end-pos)
+               (when (and open-start end-pos (>= end-pos open-start))
+                 (when (> (1+ (- end-pos open-start)) 1)
+                   (push (mscx-make-beam-span tokens open-start end-pos) spans)))
+               (setf open-start nil)))
+      (loop for token in tokens
+            for pos from 0
+            for beam = (mscx-rhythm-token-beam-mode token) do
+              (cond ((mscx-beam-mode-begin-p beam)
+                     ;; Conservative: begin inside an active span does not start nested group yet.
+                     (unless open-start (setf open-start pos)))
+
+                    ((mscx-beam-mode-mid-p beam)
+                     ;; If a mid appears without begin, start a forgiving span here.
+                     (unless open-start (setf open-start pos)))
+
+                    ((mscx-beam-mode-end-p beam)
+                     (if open-start
+			 (close-span pos)
+			 ;; Forgiving singleton-ish end; ignore as span if no start.
+			 nil))
+
+                    ((mscx-beam-mode-no-p beam)
+                     ;; Explicit break. Close any open span before this token.
+                     (when open-start (close-span (1- pos))))
+
+                    ((null beam)
+                     ;; NIL usually means no explicit override. If a span is open, close before this token.
+                     (when open-start (close-span (1- pos))))))
+
+      ;; Close dangling span at end of measure.
+      (when open-start (close-span (1- (length tokens)))))
+    (reverse spans)))
+
+(defun mscx-rhythm-token-tuplet-depth (token)
+  (length (mscx-rhythm-token-tuplet-stack token)))
+
+(defun mscx-rhythm-tokens-max-tuplet-depth (tokens)
+  (loop for token in tokens maximize (mscx-rhythm-token-tuplet-depth token) into max-depth
+        finally (return (or max-depth 0))))
+
+(defun mscx-use-beam-spans-for-tokens-p (tokens)
+  "Return true if beam spans are safe enough to use for TOKENS.
+
+v0 policy: do not apply beam grouping in measures with nested tuplets.
+Tuplets themselves are still imported; only BeamMode-derived grouping is skipped."
+  (<= (mscx-rhythm-tokens-max-tuplet-depth tokens) 1))
+
+(defun mscx-beam-spans-starting-at (spans order)
+  (remove-if-not #'(lambda (span) (= (getf span :start-order) order)) spans))
+
+(defun mscx-beam-spans-ending-at (spans order)
+  (remove-if-not #'(lambda (span) (= (getf span :end-order) order)) spans))
+
+(defun mscx-measure-beam-span-debug (measure-node state)
+  (let ((tokens (mscx-measure-rhythm-tokens measure-node state)))
+    (list :tokens (mapcar #'mscx-rhythm-token-debug-row tokens)
+          :spans (mscx-parse-primary-beam-spans tokens))))
+
+;; (let* ((x (om::om-list-from-xml-file "mscores/beams_tuplets_OM.mscx"))
+;;        (score (mscx::mscx-score-node x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (nth 2 (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-beam-span-debug measure state))
+
+
+;; (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;; (mapcar #'om::tree (om::inside p))
 
 (defun measure-from-mscx (measure-node state)
   "Decode one MSCX measure.
 
-Returns an MSCX-MEASURE-DATA struct."
+Returns an MSCX-MEASURE-DATA struct.
+
+Tuplets are structural. BeamMode is optional grouping only:
+if *MSCX-IMPORT-USE-BEAM-SPANS* is true, BeamMode is first parsed into
+conservative spans, then applied as pure grouping."
   (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
          (division (mscx-import-state-division state))
          (tempo (mscx-measure-tempo-bpm measure-node))
          (tree-builder (om::make-tree-builder))
+         (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
+
+         ;; Beam spans are parsed from a separate token pass. This avoids interpreting
+         ;; BeamMode live while walking the MSCX stream.
+         (token-state (make-mscx-import-state :division division
+                                              :signature signature
+                                              :measure-index (mscx-import-state-measure-index state)))
+         (tokens (and *mscx-import-use-beam-spans*
+                      (mscx-measure-rhythm-tokens measure-node token-state)))
+         (use-beam-spans-p (and tokens (mscx-use-beam-spans-for-tokens-p tokens)))
+         (beam-spans (and use-beam-spans-p (mscx-parse-primary-beam-spans tokens)))
+
          (chords nil)
          (active-tuplets nil)
-         (next-tuplet-id 0))
+         (active-beams nil)
+         (next-tuplet-id 0)
+         (next-beam-id 0)
+         (event-order 0))
     (setf (mscx-import-state-signature state) signature)
 
     (labels ((start-mscx-tuplet (tuplet-node)
                (let* ((time-info (mscx-tuplet-time-info tuplet-node))
                       (actual (mscx-tuplet-actual-notes tuplet-node))
-                      (id (or (mscx-tuplet-id tuplet-node nil)
-                              (format nil "mscx-tuplet-~D" (incf next-tuplet-id)))))
+                      ;; Printed tuplet text, e.g. "3", is not a structural id.
+                      ;; Nested triplets all print "3", so always generate a unique id.
+                      (id (format nil "mscx-tuplet-~D" (incf next-tuplet-id))))
                  (when (and time-info actual)
                    (om::new-tuplet tree-builder id time-info)
                    (push (make-mscx-active-tuplet :id id :time-info time-info :remaining-events actual)
@@ -565,10 +847,35 @@ Returns an MSCX-MEASURE-DATA struct."
                  (pop active-tuplets)))
 
              (count-note-event-in-active-tuplet ()
-               (when active-tuplets
+               ;; Only use actualNotes-counter when MSCX has no explicit endTuplet markers.
+               (when (and active-tuplets (not explicit-tuplet-ends-p))
                  (decf (mscx-active-tuplet-remaining-events (car active-tuplets)))
                  (when (<= (mscx-active-tuplet-remaining-events (car active-tuplets)) 0)
-                   (finish-current-tuplet)))))
+                   (finish-current-tuplet))))
+
+             (start-beam-span (span)
+               (declare (ignore span))
+               (let ((id (format nil "mscx-beam-~D" (incf next-beam-id))))
+                 ;; NIL time-info = pure group, no rhythmic tuplet ratio.
+                 (om::new-tuplet tree-builder id nil)
+                 (push id active-beams)))
+
+             (finish-beam-span (span)
+               (declare (ignore span))
+               (when active-beams
+                 (om::pop-tuplet tree-builder)
+                 (pop active-beams)))
+
+             (start-beam-spans-at (order)
+               (when use-beam-spans-p
+                 (dolist (span (mscx-beam-spans-starting-at beam-spans order))
+                   (start-beam-span span))))
+
+             (finish-beam-spans-at (order)
+               (when use-beam-spans-p
+                 ;; Reverse is harmless for non-nested spans, and safer if nested spans are added later.
+                 (dolist (span (reverse (mscx-beam-spans-ending-at beam-spans order)))
+                   (finish-beam-span span)))))
 
       (loop for item in (mscx-voice-children measure-node) do
             (cond
@@ -576,23 +883,39 @@ Returns an MSCX-MEASURE-DATA struct."
                (start-mscx-tuplet item))
 
               ((mscx-note-event-p item)
-	       (let* ((decoded (decode-mscx-event item division signature))
-		      (written-pulse (mscx-decoded-event-pulse decoded))
-		      (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
-		      (om-chord (mscx-note-event->om-chord-or-nil decoded)))
-		 (om::add-new-pulse tree-builder pulse)
-		 (when om-chord (push om-chord chords))
-		 (count-note-event-in-active-tuplet)))
+               (let* ((decoded (decode-mscx-event item division signature))
+                      (written-pulse (mscx-decoded-event-pulse decoded))
+                      (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
+                      (om-chord (mscx-note-event->om-chord-or-nil decoded)))
 
+                 (start-beam-spans-at event-order)
+
+                 (om::add-new-pulse tree-builder pulse)
+                 (when om-chord (push om-chord chords))
+
+                 (finish-beam-spans-at event-order)
+
+                 (incf event-order)
+                 (count-note-event-in-active-tuplet)))
 
               ((mscx-end-tuplet-p item)
-               ;; For MSCX files that contain explicit endTuplet.
                (finish-current-tuplet)))))
+
+    (when active-beams
+      (warn "Unclosed MSCX beam spans in measure ~A: ~S"
+            (mscx-import-state-measure-index state)
+            active-beams)
+      (loop while active-beams do
+            (om::pop-tuplet tree-builder)
+            (pop active-beams)))
 
     (when active-tuplets
       (warn "Unclosed MSCX tuplets in measure ~A: ~S"
             (mscx-import-state-measure-index state)
-            (mapcar #'mscx-active-tuplet-id active-tuplets)))
+            (mapcar #'mscx-active-tuplet-id active-tuplets))
+      (loop while active-tuplets do
+            (om::pop-tuplet tree-builder)
+            (pop active-tuplets)))
 
     (make-mscx-measure-data :signature signature
                             :tree (om::get-tree tree-builder)
@@ -601,8 +924,291 @@ Returns an MSCX-MEASURE-DATA struct."
                             :division division)))
 
 
+;;; ------------------------------------------------------------
+;;; Structural tuplet debug tree
+;;; ------------------------------------------------------------
+
+(defstruct mscx-struct-node
+  type          ; :root, :tuplet, :chord, :rest
+  id
+  time-info
+  duration-type
+  written-pulse
+  beam-mode
+  children)
+
+(defun mscx-struct-node-add-child (parent child)
+  (setf (mscx-struct-node-children parent)
+        (append (mscx-struct-node-children parent) (list child)))
+  child)
+
+(defun mscx-measure-struct-tree (measure-node state)
+  "Return an explicit nested structure from Tuplet/endTuplet and Chord/Rest.
+
+This is a debug/validation structure, not an OM tree."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (division (mscx-import-state-division state))
+         (root (make-mscx-struct-node :type :root :children nil))
+         (stack nil)
+         (next-tuplet-id 0))
+    (setf (mscx-import-state-signature state) signature)
+    (push root stack)
+
+    (labels ((current-parent () (car stack))
+
+             (start-tuplet (tuplet-node)
+               (let* ((id (format nil "mscx-tuplet-~D" (incf next-tuplet-id)))
+                      (node (make-mscx-struct-node
+                             :type :tuplet
+                             :id id
+                             :time-info (mscx-tuplet-time-info tuplet-node)
+                             :children nil)))
+                 (mscx-struct-node-add-child (current-parent) node)
+                 (push node stack)))
+
+             (end-tuplet ()
+               (if (> (length stack) 1)
+                   (pop stack)
+                   (warn "endTuplet with no open tuplet in measure ~A"
+                         (mscx-import-state-measure-index state))))
+
+             (add-event (item)
+               (let* ((decoded (decode-mscx-event item division signature))
+                      (node (make-mscx-struct-node
+                             :type (mscx-decoded-event-type decoded)
+                             :duration-type (mscx-event-duration-type item)
+                             :written-pulse (mscx-decoded-event-pulse decoded)
+                             :beam-mode (mscx-event-beam-mode item)
+                             :children nil)))
+                 (mscx-struct-node-add-child (current-parent) node))))
+
+      (loop for item in (mscx-voice-children measure-node) do
+        (cond ((mscx-tuplet-p item) (start-tuplet item))
+              ((mscx-note-event-p item) (add-event item))
+              ((mscx-end-tuplet-p item) (end-tuplet)))))
+
+    (when (> (length stack) 1)
+      (warn "Unclosed tuplets in structural parse of measure ~A: depth ~A"
+            (mscx-import-state-measure-index state)
+            (1- (length stack))))
+
+    root))
+
+(defun mscx-struct-node->sexp (node)
+  "Return compact s-expression for MSCX structural debug tree."
+  (case (mscx-struct-node-type node)
+    (:root
+     (mapcar #'mscx-struct-node->sexp (mscx-struct-node-children node)))
+
+    (:tuplet
+     (list :tuplet
+           (mscx-struct-node-time-info node)
+           (mapcar #'mscx-struct-node->sexp (mscx-struct-node-children node))))
+
+    (:chord
+     (list :chord
+           (mscx-struct-node-duration-type node)
+           (mscx-struct-node-written-pulse node)))
+
+    (:rest
+     (list :rest
+           (mscx-struct-node-duration-type node)
+           (mscx-struct-node-written-pulse node)))
+
+    (otherwise
+     (list :unknown (mscx-struct-node-type node)))))
+
+(defun mscx-score-struct-debug (path)
+  "Return structural tuplet/chord/rest parse for all measures in first staff."
+  (let* ((x (om::om-list-from-xml-file path))
+         (score (mscx-score-node x))
+         (state (make-mscx-import-state :division (mscx-score-division score)))
+         (staff (first (mscx-staff-nodes score))))
+    (loop for measure in (mscx-measure-nodes staff)
+          for i from 1
+          do (setf (mscx-import-state-measure-index state) (1- i))
+          collect (list :measure i
+                        :struct (mscx-struct-node->sexp
+                                 (mscx-measure-struct-tree measure state))))))
+
+(let* ((x (om::om-list-from-xml-file "mscores/tuplet hierarchy.mscx"))
+       (score (mscx::mscx-score-node x))
+       (staff (first (mscx::mscx-staff-nodes score)))
+       (measure (nth 2 (mscx::mscx-measure-nodes staff))))
+  (mscx::mscx-measure-item-kinds measure))
+
+;; -> (:tuplet :tuplet :chord :chord :chord :chord :chord :chord)
+
+;; (mscx::mscx-score-struct-debug "mscores/tuplet hierarchy.mscx")
+
+;; (let* ((x (om::om-list-from-xml-file "mscores/tuplet hierarchy.mscx"))
+;;        (score (mscx::mscx-score-node x))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (nth 2 (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-item-kinds measure))
+
+;; ;; (:tuplet :tuplet :chord :chord :chord :end-tuplet :chord :chord :chord :end-tuplet)
+
+;; ;; (mscx::mscx-score-struct-debug "mscores/tuplet hierarchy.mscx")
+
+;; (let ((mscx::*mscx-import-use-beam-spans* nil))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+;; (setf mscx::*mscx-import-use-beam-spans* t)
+
+;; (let ((mscx::*mscx-import-use-beam-spans* t))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+
+
+
+
 
 ;; debug measure data
+
+(defun mscx-measure-rhythm-debug (measure-node state)
+  "Return readable rhythm-token info for one MSCX measure."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (division (mscx-import-state-division state))
+         (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
+         (active-tuplets nil)
+         (next-tuplet-id 0)
+         (rows nil))
+    (labels (
+	     
+	     (start-mscx-tuplet (tuplet-node)
+	       (let* ((time-info (mscx-tuplet-time-info tuplet-node))
+		      (actual (mscx-tuplet-actual-notes tuplet-node))
+		      (printed (mscx-tuplet-id tuplet-node nil))
+		      (id (format nil "mscx-tuplet-~D" (incf next-tuplet-id))))
+		 (push (make-mscx-active-tuplet :id id :time-info time-info :remaining-events actual)
+		       active-tuplets)
+		 (push (list :tuplet-start :id id :printed printed :time-info time-info :remaining actual) rows)))
+
+             (finish-current-tuplet ()
+               (when active-tuplets
+                 (push (list :tuplet-end :id (mscx-active-tuplet-id (car active-tuplets))) rows)
+                 (pop active-tuplets)))
+
+             (count-note-event-in-active-tuplet ()
+               (when (and active-tuplets (not explicit-tuplet-ends-p))
+                 (decf (mscx-active-tuplet-remaining-events (car active-tuplets)))
+                 (when (<= (mscx-active-tuplet-remaining-events (car active-tuplets)) 0)
+                   (finish-current-tuplet)))))
+
+      (loop for item in (mscx-voice-children measure-node)
+            for i from 0 do
+              (cond
+                ((mscx-tuplet-p item)
+                 (start-mscx-tuplet item))
+
+                
+		
+		((mscx-note-event-p item)
+                 (let* ((decoded (decode-mscx-event item division signature))
+                        (written (mscx-decoded-event-pulse decoded))
+                        (actual (mscx-scale-pulse-for-active-tuplets written active-tuplets)))
+                   (push (list :i i
+                               :kind (mscx-voice-item-kind item)
+                               :duration-type (mscx-event-duration-type item)
+                               :beam (mscx-event-beam-mode item)
+                               :written written
+                               :actual actual
+                               :tuplets (mapcar #'mscx-active-tuplet-time-info active-tuplets))
+                         rows)
+                   (count-note-event-in-active-tuplet)))
+
+                ((mscx-end-tuplet-p item)
+                 (finish-current-tuplet)))))
+
+    (reverse rows)))
+
+(defun mscx-measure-beam-policy-debug (measure-node state)
+  (let* ((tokens (mscx-measure-rhythm-tokens measure-node state))
+         (max-depth (mscx-rhythm-tokens-max-tuplet-depth tokens)))
+    (list :max-tuplet-depth max-depth
+          :use-beam-spans (mscx-use-beam-spans-for-tokens-p tokens)
+          :spans (when (mscx-use-beam-spans-for-tokens-p tokens)
+                   (mscx-parse-primary-beam-spans tokens)))))
+
+;; (let ((mscx::*mscx-import-use-beam-spans* t))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+
+;; (let* ((x (om::om-list-from-xml-file "mscores/beams_tuplets_OM.mscx"))
+;;        (score (mscx::mscx-score-node x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (nth 7 (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-beam-policy-debug measure state))
+
+;; (let ((mscx::*mscx-import-use-beam-spans* t))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+;; (setf mscx::*mscx-import-use-beam-spans* t)
+
+;; (let ((mscx::*mscx-import-use-beam-spans* nil))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+;; ((13/2
+;;   (((4 4) (2 2 1 1 1 1))
+;;    ((2 4) (1 2 1 4))
+;;    ((3 4) (2 2 2 2 2 3 1 2 2 2 1 1 1 1))
+;;    ((3 4) (2 2 1 1))
+;;    ((3 4) (2 2 1 1 1 1 4))
+;;    ((3 4) (2 -2 2 2 2 3 1 2 2 -2 1 -1 1 1))
+;;    ((4 4) ((1 (1 1 1)) (1 (1 1 1)) (1 (1 1 1)) 1))
+;;    ((4 4) ((4 (1 (2 (1 (1 (1 1 1)) 1 2)) 2 2)))))))
+
+;; (let ((mscx::*mscx-import-use-beam-spans* t))
+;;   (setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+;;   (mapcar #'om::tree (om::inside p)))
+
+;; ((13/2
+;;   (((4 4) (1 1 (2 (1 1 1 1))))
+;;    ((2 4) (1 2 1 4))
+;;    ((3 4) ((2 (1 1 1 1)) (2 (2 3 1 2)) (1 (1 1)) (1 (1 1 1 1))))
+;;    ((3 4) (1 1 (1 (1 1))))
+;;    ((3 4) ((2 (1 1)) (1 (1 1)) (1 (1 1)) 2))
+;;    ((3 4) (2 -2 (4 (1 1)) (13 (2 3 1 2 2 -2 1)) -1 (2 (1 1))))
+;;    ((4 4) ((1 ((1 (1 1 1)))) (1 ((1 (1 1 1)))) (1 ((1 (1 1 1)))) 1))
+;;    ((4 4) ((4 ((1 (3 (2 (1 (1 (1 1 1)))) 1 2)) 1 1)))))))
+
+
+
+;; (let* ((x (om::om-list-from-xml-file "mscores/beams_tuplets_OM.mscx"))
+;;        (score (mscx::mscx-score-node x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (nth 2 (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-rhythm-debug measure state))
+
+#|
+
+(setq p (om::import-mscx "mscores/beams.mscx"))
+(mapcar #'om::tree (om::inside p))
+
+((1 (((4 4) (8 4 4 2 2 1 1 (2 (1 1 1)) 8)))))
+
+(setq p (om::import-mscx "mscores/beams_tuplets_OM.mscx"))
+(mapcar #'om::tree (om::inside p))
+
+((13/2 (((4 4) (2 2 1 1 1 1)) ((2 4) (1 2 1 4)) ((3 4) (2 2 2 2 2 3 1 2 2 2 1 1 1 1)) ((3 4) (2 2 1 1)) ((3 4) (2 2 1 1 1 1 4)) ((3 4) (2 -2 2 2 2 3 1 2 2 -2 1 -1 1 1)) ((4 4) ((1 (1 1 1)) (1 (1 1 1)) (1 (1 1 1)) 1)) ((4 4) ((4 (1 (2 (1 (1 (1 1 1)) 1 2)) 2 2)))))))
+
+
+
+(let* ((x (om::om-list-from-xml-file "mscores/beams_tuplets_OM.mscx"))
+       (score (mscx::mscx-score-node x))
+       (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+       (staff (first (mscx::mscx-staff-nodes score)))
+       (measure (nth 7 (mscx::mscx-measure-nodes staff))))
+  (mscx::mscx-measure-rhythm-debug measure state))
+
+((:tuplet-start :id "3" :time-info (3 2) :remaining 3) (:tuplet-start :id "3" :time-info (3 2) :remaining 3) (:i 2 :kind :chord :duration-type "quarter" :beam "begin" :written 480 :actual 640/3 :tuplets ((3 2) (3 2))) (:tuplet-start :id "3" :time-info (3 2) :remaining 3) (:i 4 :kind :chord :duration-type "eighth" :beam "begin" :written 240 :actual 640/9 :tuplets ((3 2) (3 2) (3 2))) (:tuplet-start :id "3" :time-info (3 2) :remaining 3) (:i 6 :kind :chord :duration-type "16th" :beam "begin" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:i 7 :kind :chord :duration-type "16th" :beam "mid" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:i 8 :kind :chord :duration-type "16th" :beam "end" :written 120 :actual 640/27 :tuplets ((3 2) (3 2) (3 2) (3 2))) (:tuplet-end :id "3") (:i 9 :kind :chord :duration-type "eighth" :beam "end" :written 240 :actual 640/9 :tuplets ((3 2) (3 2) (3 2))) (:i 10 :kind :chord :duration-type "quarter" :beam "end" :written 480 :actual 1280/9 :tuplets ((3 2) (3 2) (3 2))) (:tuplet-end :id "3") (:i 11 :kind :chord :duration-type "half" :beam nil :written 960 :actual 1280/3 :tuplets ((3 2) (3 2))) (:i 12 :kind :chord :duration-type "half" :beam nil :written 960 :actual 1280/3 :tuplets ((3 2) (3 2))) (:tuplet-end :id "3"))
 
 (defun mscx-measure-debug-data (measure-node state)
   "Return readable measure data for quick REPL testing."
@@ -615,11 +1221,31 @@ Returns an MSCX-MEASURE-DATA struct."
           :chord-midics (loop for ch in (mscx-measure-data-chords data) collect (om::lmidic ch))
           :chord-vels (loop for ch in (mscx-measure-data-chords data) collect (om::lvel ch)))))
 
-(let* ((score (mscx::mscx-score-node om::x))
-       (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
-       (staff (first (mscx::mscx-staff-nodes score)))
-       (measure (first (mscx::mscx-measure-nodes staff))))
-  (mscx::mscx-measure-debug-data measure state))
+;; (let* ((score (mscx::mscx-score-node om::x))
+;;        (state (mscx::make-mscx-import-state :division (mscx::mscx-score-division score)))
+;;        (staff (first (mscx::mscx-staff-nodes score)))
+;;        (measure (first (mscx::mscx-measure-nodes staff))))
+;;   (mscx::mscx-measure-debug-data measure state))
+
+|#
+
+(defun mscx-score-rhythm-debug (path)
+  (let* ((x (om::om-list-from-xml-file path))
+         (score (mscx-score-node x))
+         (division (mscx-score-division score)))
+    (loop for staff in (mscx-staff-nodes score)
+          for s from 1
+          collect
+          (let ((state (make-mscx-import-state :division division)))
+            (list :staff s
+                  :measures
+                  (loop for measure in (mscx-measure-nodes staff)
+                        for m from 1
+                        do (setf (mscx-import-state-measure-index state) (1- m))
+                        collect (list :measure m
+                                      :items (mscx-measure-rhythm-debug measure state))))))))
+
+;; (mscx::mscx-score-rhythm-debug "mscores/beams_tuplets_OM.mscx")
 
 
 ;;; ------------------------------------------------------------
@@ -757,27 +1383,3 @@ For now all MSCX tempos are normalized to quarter = BPM."
                    :types '("MuseScore MSCX" "*.mscx" "All Documents" "*.*")))))
     (when file
       (mscx::read-mscx-list (om-list-from-xml-file file)))))
-
-;; (setq p (import-mscx "mscores/articulations_text_extras.mscx"))
-
-;; (length (inside p))
-;; ;; => 1
-;; (om::tree (first (inside p)))
-;; ;; => typisk (1 (((4 4) (1 1 1 1))))
-
-;; (length (om::chords (first (inside p))))
-;; ;; => 4
-
-;; (setq p (import-mscx "mscores/articulations_text_extras.mscx"))
-;; (setq p (import-mscx "mscores/tcp.mscx"))
-;; (setq p (import-mscx "mscores/micro_EDO48.mscx"))
-;; (setq p (import-mscx "mscores/from_omorch.mscx"))
-;; (setq p (import-mscx "mscores/time_tempo.mscx"))
-
-;; (length (inside p))
-;; (mapcar #'tree (inside p))
-;; (mapcar #'(lambda (v) (length (chords v))) (inside p))
-;; (mapcar #'tempo (inside p))
-
-;; debug util:
-
