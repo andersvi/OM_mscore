@@ -410,6 +410,7 @@ This is only for implicit AUTO material: no MSCX Tuplet and no explicit BeamMode
   signature
   tree
   chords
+  ties
   tempo
   division)
 
@@ -535,6 +536,35 @@ tuplet-stack information, and BeamMode."
             (mscx-import-state-measure-index state)
             (mapcar #'mscx-active-tuplet-id active-tuplets)))
     (reverse tokens)))
+
+
+;;; ------------------------------------------------------------
+;;; Tie spanner
+;;; ------------------------------------------------------------
+
+
+(defun mscx-spanner-p (node)
+  (mscx-tag-equal node :|Spanner|))
+
+(defun mscx-tie-spanner-p (node)
+  (and (mscx-spanner-p node)
+       (string= (mscx-attr node :|type| "") "Tie")))
+
+(defun mscx-note-has-tie-next-p (note-node)
+  (some #'(lambda (spanner)
+            (and (mscx-tie-spanner-p spanner)
+                 (mscx-child spanner :|next|)))
+        (mscx-children-named note-node :|Spanner|)))
+
+(defun mscx-chord-ties-to-next (chord-node)
+  "Return OM midics in CHORD-NODE that tie forward to the next chord."
+  (loop for note in (mscx-children-named chord-node :|Note|)
+        when (mscx-note-has-tie-next-p note)
+        collect (mscx-note-midic note)))
+
+(defun mscx-decoded-event-ties-to-next (decoded-event)
+  (when (eq (mscx-decoded-event-type decoded-event) :chord)
+    (mscx-chord-ties-to-next (mscx-decoded-event-source decoded-event))))
 
 
 ;;; ------------------------------------------------------------
@@ -767,6 +797,7 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 	 (has-grace-p (and tokens (some #'mscx-token-grace-p tokens)))
 
 	 (chords nil)
+	 (ties nil)
 	 (active-tuplets nil)
 	 (active-beams nil)
 	 (next-tuplet-id 0)
@@ -820,7 +851,9 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
                  (start-beam-spans-at event-order)
                  (unless (mscx-decoded-event-grace-p decoded) ;dont add grace-notes as ordinary pulse
 		   (om::add-new-pulse tree-builder pulse))
-                 (when om-chord (push om-chord chords))
+                 (when om-chord
+		   (push om-chord chords)
+		   (push (mscx-decoded-event-ties-to-next decoded) ties))
                  (finish-beam-spans-at event-order)
                  (incf event-order)
                  (count-note-event-in-active-tuplet)))
@@ -840,7 +873,8 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 				    (use-om-simple-tree-p (mscx-tokens->om-simple-measure-tree tokens signature division))
 				    (t (om::get-tree tree-builder)))
                             :chords (reverse chords)
-                            :tempo tempo
+                            :ties (reverse ties)
+			    :tempo tempo
                             :division division)))
 
 ;;; ------------------------------------------------------------
@@ -1095,6 +1129,10 @@ This is a debug/validation structure, not an OM tree."
   "Return flat chord list for OM voice."
   (loop for data in measure-data-list append (mscx-measure-data-chords data)))
 
+(defun mscx-measure-data-list->ties (measure-data-list)
+  "Return flat tie list for OM voice, parallel with real chords."
+  (loop for data in measure-data-list append (mscx-measure-data-ties data)))
+
 (defun mscx-measure-data-list->tempo (measure-data-list)
   "Return OM voice tempo structure.
 
@@ -1121,8 +1159,14 @@ For now all MSCX tempos are normalized to quarter = BPM."
     (let* ((data (reverse measure-data-list))
            (tree (mscx-measure-data-list->tree data))
            (chords (mscx-measure-data-list->chords data))
-           (tempo (mscx-measure-data-list->tempo data)))
-      (make-instance 'om::voice :tree tree :chords chords :tempo tempo :name name))))
+           (ties (mscx-measure-data-list->ties data))
+	   (tempo (mscx-measure-data-list->tempo data)))
+      (make-instance 'om::voice
+		     :tree tree
+		     :chords chords
+		     :ties ties
+		     :tempo tempo
+		     :name name))))
 
 (defun mscx-staff-debug-data (staff-node state)
   "Return readable Staff import data."
