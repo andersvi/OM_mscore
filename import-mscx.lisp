@@ -229,6 +229,51 @@ MSCX Division is the number of ticks in one quarter note."
          (tempo (and voice (find-if #'mscx-tempo-p (mscx-children voice)))))
     (and tempo (mscx-tempo-bpm tempo))))
 
+(defun mscx-tempo-sym-texts (tempo-node)
+  (let ((text-node (mscx-child tempo-node :|text|)))
+    (when text-node
+      (loop for sym in (mscx-children-named text-node :|sym|)
+            collect (mscx-direct-text sym)))))
+
+(defun mscx-tempo-symbol-base-unit (sym)
+  (cond ((search "metNoteWhole" sym) 1)
+        ((search "metNoteHalf" sym) 1/2)
+        ((search "metNoteQuarter" sym) 1/4)
+        ((search "metNote8th" sym) 1/8)
+        ((search "metNote16th" sym) 1/16)
+        ((search "metNote32nd" sym) 1/32)
+        (t 1/4)))
+
+(defun mscx-tempo-symbols->unit (symbols)
+  (let* ((note-sym (find-if #'(lambda (s) (search "metNote" s)) symbols))
+         (base (if note-sym (mscx-tempo-symbol-base-unit note-sym) 1/4))
+         (dots (count-if #'(lambda (s) (search "metAugmentationDot" s)) symbols)))
+    (* base
+       (case dots
+         (0 1)
+         (1 3/2)
+         (2 7/4)
+         (3 15/8)
+         (t 1)))))
+
+(defun mscx-clean-bpm (x)
+  (let ((r (round x)))
+    (if (< (abs (- x r)) 0.001)
+        r
+        x)))
+
+(defun mscx-tempo-unit-and-bpm (tempo-node)
+  "Return (UNIT BPM). MuseScore raw tempo is quarter-notes/sec.
+Exporter wrote raw = 4 * UNIT * BPM / 60."
+  (let* ((raw (mscx-tempo-raw tempo-node))
+         (unit (mscx-tempo-symbols->unit (mscx-tempo-sym-texts tempo-node)))
+         (bpm (and raw (/ (* raw 60.0) (* 4 unit)))))
+    (list unit (and bpm (mscx-clean-bpm bpm)))))
+
+(defun measure-beat-unit-from-signature (signature)
+  (/ 1 (om::find-beat-symbol (second signature))))
+
+
 (defstruct mscx-import-state
   (division 480)
   (signature '(4 4))
@@ -411,7 +456,8 @@ This is only for implicit AUTO material: no MSCX Tuplet and no explicit BeamMode
   tree
   chords
   ties
-  tempo
+  tempos
+  clef
   division)
 
 (defstruct mscx-active-tuplet
@@ -542,7 +588,6 @@ tuplet-stack information, and BeamMode."
 ;;; Tie spanner
 ;;; ------------------------------------------------------------
 
-
 (defun mscx-spanner-p (node)
   (mscx-tag-equal node :|Spanner|))
 
@@ -565,6 +610,34 @@ tuplet-stack information, and BeamMode."
 (defun mscx-decoded-event-ties-to-next (decoded-event)
   (when (eq (mscx-decoded-event-type decoded-event) :chord)
     (mscx-chord-ties-to-next (mscx-decoded-event-source decoded-event))))
+
+;;; ------------------------------------------------------------
+;;; Clefs -> edit-parameters in poly/voice
+;;; ------------------------------------------------------------
+
+
+(defun mscx-clef-type (clef-node)
+  (or (mscx-child-text clef-node :|concertClefType|)
+      (mscx-child-text clef-node :|transposingClefType|)))
+
+(defun mscx-clef-type->om-staff-symbol (type)
+  (cond ((null type) nil)
+        ((string= type "G") 'om::g)
+        ((string= type "G8vb") 'om::g_8)
+        ((string= type "G8va") 'om::g^8)
+        ((string= type "F") 'om::f)
+        ((string= type "F8vb") 'om::f_8)
+        ((string= type "C1") 'om::c1)
+        ((string= type "C3") 'om::c3)
+        ((string= type "C4") 'om::c4)
+        ((string= type "PERC") 'om::empty)
+        (t nil)))
+
+(defun mscx-measure-clef (measure-node)
+  (let ((clef (find-if #'mscx-clef-p (mscx-voice-children measure-node))))
+    (and clef
+         (mscx-clef-type->om-staff-symbol
+          (mscx-clef-type clef)))))
 
 
 ;;; ------------------------------------------------------------
@@ -765,7 +838,6 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 
   (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
 	 (division (mscx-import-state-division state))
-	 (tempo (mscx-measure-tempo-bpm measure-node))
 	 (tree-builder (om::make-tree-builder))
 	 (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
 
@@ -795,8 +867,11 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 				    (null beam-spans)))
 	 ;; check for grace notes
 	 (has-grace-p (and tokens (some #'mscx-token-grace-p tokens)))
-
+	 
 	 (chords nil)
+	 (tempos nil)
+	 (clef (mscx-measure-clef measure-node))
+	 (current-pulse 0)
 	 (ties nil)
 	 (active-tuplets nil)
 	 (active-beams nil)
@@ -843,21 +918,33 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
                    (finish-beam-span span)))))
       (loop for item in (mscx-voice-children measure-node) do
         (cond ((mscx-tuplet-p item) (start-mscx-tuplet item))
-              ((mscx-note-event-p item)
-               (let* ((decoded (decode-mscx-event item division signature))
-                      (written-pulse (mscx-decoded-event-pulse decoded))
-                      (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
-                      (om-chord (mscx-note-event->om-chord-or-nil decoded)))
-                 (start-beam-spans-at event-order)
-                 (unless (mscx-decoded-event-grace-p decoded) ;dont add grace-notes as ordinary pulse
-		   (om::add-new-pulse tree-builder pulse))
-                 (when om-chord
-		   (push om-chord chords)
-		   (push (mscx-decoded-event-ties-to-next decoded) ties))
-                 (finish-beam-spans-at event-order)
-                 (incf event-order)
-                 (count-note-event-in-active-tuplet)))
-              ((mscx-end-tuplet-p item) (finish-current-tuplet)))))
+              
+	      ((mscx-tempo-p item) (let* ((unit-bpm (mscx-tempo-unit-and-bpm item))
+					  (unit (first unit-bpm))
+					  (bpm (second unit-bpm))
+					  (beat-index (/ (/ current-pulse division)
+							 (* 4 (measure-beat-unit-from-signature signature)))))
+				     (when bpm
+				       (push (list beat-index (list unit bpm nil)) tempos))))
+	      
+	      ((mscx-note-event-p item) (let* ((decoded (decode-mscx-event item division signature))
+					       (written-pulse (mscx-decoded-event-pulse decoded))
+					       (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
+					       (om-chord (mscx-note-event->om-chord-or-nil decoded)))
+					  (start-beam-spans-at event-order)
+					  (unless (mscx-decoded-event-grace-p decoded)
+					    (om::add-new-pulse tree-builder pulse)
+					    (incf current-pulse pulse))
+					  (when om-chord
+					    (push om-chord chords)
+					    (push (mscx-decoded-event-ties-to-next decoded) ties))
+					  (finish-beam-spans-at event-order)
+					  (incf event-order)
+					  (count-note-event-in-active-tuplet)))
+	      
+              ((mscx-end-tuplet-p item) (finish-current-tuplet))
+	      )))
+
     (when active-beams
       (warn "Unclosed MSCX beam spans in measure ~A: ~S"
             (mscx-import-state-measure-index state) active-beams)
@@ -869,12 +956,14 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
       (loop while active-tuplets do (om::pop-tuplet tree-builder) (pop active-tuplets)))
     (make-mscx-measure-data :signature signature
                             :tree (cond
-				    (has-grace-p (mscx-tokens->om-grace-measure-tree tokens division))
-				    (use-om-simple-tree-p (mscx-tokens->om-simple-measure-tree tokens signature division))
-				    (t (om::get-tree tree-builder)))
+                                    (has-grace-p (mscx-tokens->om-grace-measure-tree tokens division))
+                                    (use-om-simple-tree-p
+                                     (mscx-tokens->om-simple-measure-tree tokens signature division))
+                                    (t (om::get-tree tree-builder)))
                             :chords (reverse chords)
                             :ties (reverse ties)
-			    :tempo tempo
+			    :clef clef
+                            :tempos (reverse tempos)
                             :division division)))
 
 ;;; ------------------------------------------------------------
@@ -1133,21 +1222,27 @@ This is a debug/validation structure, not an OM tree."
   "Return flat tie list for OM voice, parallel with real chords."
   (loop for data in measure-data-list append (mscx-measure-data-ties data)))
 
-(defun mscx-measure-data-list->tempo (measure-data-list)
-  "Return OM voice tempo structure.
+(defun mscx-measure-data-list->clef (measure-data-list)
+  (loop for data in measure-data-list
+        for clef = (mscx-measure-data-clef data)
+        when clef return clef))
 
-First tempo becomes the initial tempo. Later tempos are returned as measure-positioned tempo events.
-For now all MSCX tempos are normalized to quarter = BPM."
+(defun mscx-measure-data-list->tempo (measure-data-list)
   (let ((tempo-events nil)
         (initial nil))
     (loop for data in measure-data-list
-          for i from 0
-          for bpm = (mscx-measure-data-tempo data)
-          when bpm do
-            (unless initial (setf initial (list 1/4 bpm)))
-            (push (list (list i 0) (list 1/4 bpm nil)) tempo-events))
+          for i from 0 do
+            (loop for tempo-event in (mscx-measure-data-tempos data)
+                  for beat-index = (first tempo-event)
+                  for tempo-spec = (second tempo-event) do
+                    (unless initial
+                      (setf initial (list (first tempo-spec)
+                                          (second tempo-spec))))
+                    (push (list (list i beat-index) tempo-spec)
+                          tempo-events)))
     (list (or initial '(1/4 60))
           (cdr (reverse tempo-events)))))
+
 
 (defun staff-from-mscx (staff-node state &key name)
   "Decode one MSCX Staff into one OM voice."
@@ -1157,16 +1252,23 @@ For now all MSCX tempos are normalized to quarter = BPM."
             (setf (mscx-import-state-measure-index state) i)
             (push (measure-from-mscx measure state) measure-data-list))
     (let* ((data (reverse measure-data-list))
-           (tree (mscx-measure-data-list->tree data))
-           (chords (mscx-measure-data-list->chords data))
-           (ties (mscx-measure-data-list->ties data))
-	   (tempo (mscx-measure-data-list->tempo data)))
-      (make-instance 'om::voice
-		     :tree tree
-		     :chords chords
-		     :ties ties
-		     :tempo tempo
-		     :name name))))
+	   (tree (mscx-measure-data-list->tree data))
+	   (chords (mscx-measure-data-list->chords data))
+	   (ties (mscx-measure-data-list->ties data))
+	   (tempo (mscx-measure-data-list->tempo data))
+	   (clef (mscx-measure-data-list->clef data))
+	   (voice (make-instance 'om::voice
+				 :tree tree
+				 :chords chords
+				 :ties ties
+				 :tempo tempo
+				 :name name)))
+      ;; dette virker bare hvis VOICE allerede har associated-box
+      ;; ellers må det gjøres etter at objektet er plassert i OM.
+      (when (and clef (om::associated-box voice))
+	(om::set-edit-param (om::associated-box voice) 'om::staff clef))
+      voice)))
+
 
 (defun mscx-staff-debug-data (staff-node state)
   "Return readable Staff import data."
