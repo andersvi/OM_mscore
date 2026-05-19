@@ -307,9 +307,32 @@ MSCX Division is the number of ticks in one quarter note."
   (when (eq (mscx-decoded-event-type decoded-event) :chord)
     (mscx-decoded-chord->om-chord decoded-event)))
 
+(defun mscx-measure-has-tuplets-p (measure-node)
+  "Return true if MEASURE-NODE contains Tuplet nodes."
+  (some #'mscx-tuplet-p (mscx-voice-children measure-node)))
+
+(defun mscx-measure-has-explicit-beam-modes-p (measure-node)
+  "Return true if any Chord/Rest in MEASURE-NODE has explicit BeamMode."
+  (some #'(lambda (item)
+            (and (mscx-note-event-p item)
+                 (mscx-event-beam-mode item)))
+        (mscx-voice-children measure-node)))
+
+(defun mscx-use-om-simple-tree-for-measure-p (measure-node)
+  "Return true when OM simple->tree should be used as AUTO grouping fallback.
+
+This is only for implicit AUTO material: no MSCX Tuplet and no explicit BeamMode."
+  (and *mscx-import-use-om-simple-tree-for-auto*
+       (not (mscx-measure-has-tuplets-p measure-node))
+       (not (mscx-measure-has-explicit-beam-modes-p measure-node))))
+
 ;;; ------------------------------------------------------------
 ;;; Tuplets and beam-span grouping
 ;;; ------------------------------------------------------------
+
+;; Known issue:
+;; Adjacent rests inside tuplets may be normalized/merged by OM after voice construction.
+;; Example: (-1 -2) may become (-3)
 
 (defparameter *mscx-import-use-beam-spans* t
   "If true, use conservative BeamMode spans as pure grouping in imported rhythm trees.")
@@ -570,6 +593,49 @@ This identifies explicit begin...end spans. Nested/secondary beams such as begin
       (when open-start (close-span (1- (length tokens)))))
     (reverse spans)))
 
+(defun mscx-parse-strict-primary-beam-spans (tokens)
+  "Parse only complete explicit BeamMode begin...end spans.
+
+Unlike mscx-parse-primary-beam-spans, this does not start spans from MID.
+This is useful for deciding whether MSCX contains enough explicit beam info
+to override OM simple->tree AUTO grouping."
+  (let ((spans nil)
+        (open-start nil))
+    (labels ((close-span (end-pos)
+               (when (and open-start end-pos (>= end-pos open-start))
+                 (when (> (1+ (- end-pos open-start)) 1)
+                   (push (mscx-make-beam-span tokens open-start end-pos) spans)))
+               (setf open-start nil)))
+
+      (loop for token in tokens
+            for pos from 0
+            for beam = (mscx-rhythm-token-beam-mode token) do
+              (cond
+                ((mscx-beam-mode-begin-p beam)
+                 (setf open-start pos))
+
+                ((mscx-beam-mode-end-p beam)
+                 (when open-start
+                   (close-span pos)))
+
+                ((or (mscx-beam-mode-no-p beam)
+                     (null beam))
+                 ;; Explicit break or no explicit beam: abandon incomplete span.
+                 (setf open-start nil))))
+
+      ;; Dangling begin without end is not a complete span.
+      )
+
+    (reverse spans)))
+
+(defun mscx-parse-beam-spans (tokens division signature)
+  "Return beam spans for TOKENS.
+
+For now, use only explicit BeamMode begin/mid/end spans.
+DIVISION and SIGNATURE are accepted for later AUTO-beam fallback, but ignored here."
+  (declare (ignore division signature))
+  (mscx-parse-primary-beam-spans tokens))
+
 (defun mscx-rhythm-token-tuplet-depth (token)
   (length (mscx-rhythm-token-tuplet-stack token)))
 
@@ -589,8 +655,10 @@ v0 policy: do not apply beam grouping in measures with nested tuplets. Tuplets t
 (defun mscx-beam-spans-ending-at (spans order)
   (remove-if-not #'(lambda (span) (= (getf span :end-order) order)) spans))
 
+
+
 ;;; ------------------------------------------------------------
-;;; Measure decoding -> OM chords + rhythm tree
+;;; MAIN WORKHORSE: Measure decoding -> OM chords + rhythm tree
 ;;; ------------------------------------------------------------
 
 (defun measure-from-mscx (measure-node state)
@@ -598,22 +666,45 @@ v0 policy: do not apply beam grouping in measures with nested tuplets. Tuplets t
 
 Tuplets are structural. BeamMode is optional grouping only: if *MSCX-IMPORT-USE-BEAM-SPANS* is true,
 BeamMode is first parsed into conservative spans, then applied as pure grouping."
+
   (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
-         (division (mscx-import-state-division state))
-         (tempo (mscx-measure-tempo-bpm measure-node))
-         (tree-builder (om::make-tree-builder))
-         (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
-         (token-state (make-mscx-import-state :division division :signature signature
-                                              :measure-index (mscx-import-state-measure-index state)))
-         (tokens (and *mscx-import-use-beam-spans* (mscx-measure-rhythm-tokens measure-node token-state)))
-         (use-beam-spans-p (and tokens (mscx-use-beam-spans-for-tokens-p tokens)))
-         (beam-spans (and use-beam-spans-p (mscx-parse-primary-beam-spans tokens)))
-         (chords nil)
-         (active-tuplets nil)
-         (active-beams nil)
-         (next-tuplet-id 0)
-         (next-beam-id 0)
-         (event-order 0))
+	 (division (mscx-import-state-division state))
+	 (tempo (mscx-measure-tempo-bpm measure-node))
+	 (tree-builder (om::make-tree-builder))
+	 (explicit-tuplet-ends-p (mscx-measure-has-end-tuplets-p measure-node))
+
+	 ;; Token pass used both for explicit beam-spans and OM simple->tree fallback.
+	 (token-state (make-mscx-import-state :division division
+                                     :signature signature
+                                     :measure-index (mscx-import-state-measure-index state)))
+
+	 (tokens (and (or *mscx-import-use-beam-spans*
+			  *mscx-import-use-om-simple-tree-for-auto*)
+		      (mscx-measure-rhythm-tokens measure-node token-state)))
+
+	 ;; Explicit BeamMode spans.
+	 (beam-spans (and *mscx-import-use-beam-spans*
+			  tokens
+			  (mscx-parse-beam-spans tokens division signature)))
+
+	 (use-beam-spans-p (and beam-spans
+				(mscx-use-beam-spans-for-tokens-p tokens)))
+
+	 ;; OM default grouping fallback for implicit AUTO material.
+	 
+	 (use-om-simple-tree-p (and *mscx-import-use-om-simple-tree-for-auto*
+				    tokens
+				    (not (mscx-measure-has-tuplets-p measure-node))
+				    ;; Important: partial BeamMode overrides should not block OM AUTO.
+				    (null beam-spans)))
+
+	 (chords nil)
+	 (active-tuplets nil)
+	 (active-beams nil)
+	 (next-tuplet-id 0)
+	 (next-beam-id 0)
+	 (event-order 0))
+    
     (setf (mscx-import-state-signature state) signature)
     (labels ((start-mscx-tuplet (tuplet-node)
                (let* ((time-info (mscx-tuplet-time-info tuplet-node))
@@ -675,7 +766,9 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
             (mapcar #'mscx-active-tuplet-id active-tuplets))
       (loop while active-tuplets do (om::pop-tuplet tree-builder) (pop active-tuplets)))
     (make-mscx-measure-data :signature signature
-                            :tree (om::get-tree tree-builder)
+                            :tree (if use-om-simple-tree-p
+                                      (mscx-tokens->om-simple-measure-tree tokens signature division)
+                                      (om::get-tree tree-builder))
                             :chords (reverse chords)
                             :tempo tempo
                             :division division)))
@@ -734,9 +827,17 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
   (mapcar #'mscx-rhythm-token-debug-row (mscx-measure-rhythm-tokens measure-node state)))
 
 (defun mscx-measure-beam-span-debug (measure-node state)
-  (let ((tokens (mscx-measure-rhythm-tokens measure-node state)))
-    (list :tokens (mapcar #'mscx-rhythm-token-debug-row tokens)
-          :spans (mscx-parse-primary-beam-spans tokens))))
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (tokens (mscx-measure-rhythm-tokens measure-node state))
+         (division (mscx-import-state-division state))
+         (loose-spans (mscx-parse-primary-beam-spans tokens))
+         (strict-spans (mscx-parse-strict-primary-beam-spans tokens))
+         (beam-spans (mscx-parse-beam-spans tokens division signature)))
+    (list :signature signature
+          :tokens (mapcar #'mscx-rhythm-token-debug-row tokens)
+          :loose-spans loose-spans
+          :strict-spans strict-spans
+          :spans beam-spans)))
 
 (defun mscx-measure-beam-policy-debug (measure-node state)
   (let* ((tokens (mscx-measure-rhythm-tokens measure-node state))
