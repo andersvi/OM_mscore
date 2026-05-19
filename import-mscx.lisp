@@ -447,6 +447,79 @@ tuplet-stack information, and BeamMode."
             (mapcar #'mscx-active-tuplet-id active-tuplets)))
     (reverse tokens)))
 
+
+;;; ------------------------------------------------------------
+;;; OM simple->tree fallback for implicit AUTO grouping
+;;; ------------------------------------------------------------
+
+;; main OM interface is #'simple->tree
+
+
+(defun mscx-pulse->duration-ratio (pulse division)
+  "Convert MSCX ticks to musical duration ratio.
+
+Examples with division=480:
+  480  -> 1/4
+  240  -> 1/8
+ -120  -> -1/16"
+  (/ pulse (* 4 division)))
+
+(defun mscx-measure-simple-durations (measure-node state)
+  "Return flat duration ratios for one measure, based on rhythm tokens.
+
+This uses actual-pulse, so rests keep negative sign and tuplets are represented
+as their actual rhythmic durations. This function is mainly for debugging and
+for simple non-tuplet AUTO grouping."
+  (let* ((tokens (mscx-measure-rhythm-tokens measure-node state))
+         (division (mscx-import-state-division state)))
+    (loop for token in tokens
+          collect (mscx-pulse->duration-ratio (mscx-rhythm-token-actual-pulse token) division))))
+
+(defun mscx-simple-tree-result-measure-tree (simple-tree)
+  "Extract the measure tree from OM simple->tree result.
+
+OM simple->tree returns something like:
+  (? (((4 4) tree)))
+
+This returns only:
+  tree"
+  (let* ((measures (second simple-tree))
+         (first-measure (first measures)))
+    (second first-measure)))
+
+(defun mscx-tokens->om-simple-measure-tree (tokens signature division)
+  "Use OM simple->tree to build default grouping for a single measure.
+
+This should only be used for plain measures where MSCX has no Tuplet and no
+explicit BeamMode. Tuplets and explicit BeamMode are handled elsewhere."
+  (let* ((durations (loop for token in tokens
+                          collect (mscx-pulse->duration-ratio
+                                   (mscx-rhythm-token-actual-pulse token)
+                                   division)))
+         (simple-tree (om::simple->tree durations (list signature))))
+    (mscx-simple-tree-result-measure-tree simple-tree)))
+
+(defun mscx-measure-simple-tree-debug (measure-node state)
+  "Return what OM simple->tree would build for this measure.
+
+This is a debug helper and should be tested before plugging simple->tree into
+the real import path."
+  (let* ((signature (mscx-measure-timesig measure-node (mscx-import-state-signature state)))
+         (tokens (mscx-measure-rhythm-tokens measure-node state))
+         (division (mscx-import-state-division state))
+         (durations (loop for token in tokens
+                          collect (mscx-pulse->duration-ratio
+                                   (mscx-rhythm-token-actual-pulse token)
+                                   division)))
+         (simple-tree (om::simple->tree durations (list signature))))
+    (list :signature signature
+          :durations durations
+          :simple-tree simple-tree
+          :measure-tree (mscx-simple-tree-result-measure-tree simple-tree))))
+
+
+;; beam-span-seksjonen
+
 (defun mscx-primary-beam-mode-p (beam-mode)
   (and beam-mode (or (string= beam-mode "begin")
                      (string= beam-mode "mid")
