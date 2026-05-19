@@ -314,6 +314,9 @@ MSCX Division is the number of ticks in one quarter note."
 (defparameter *mscx-import-use-beam-spans* t
   "If true, use conservative BeamMode spans as pure grouping in imported rhythm trees.")
 
+(defparameter *mscx-import-use-om-simple-tree-for-auto* t
+  "Use OM simple->tree for measures with no MSCX Tuplet and no explicit BeamMode.")
+
 (defstruct mscx-measure-data
   signature
   tree
