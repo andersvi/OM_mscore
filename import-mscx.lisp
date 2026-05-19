@@ -245,10 +245,14 @@ MSCX Division is the number of ticks in one quarter note."
   tpc)
 
 (defstruct mscx-decoded-event
-  type        ; :chord or :rest
-  duration    ; integer ticks
-  notes       ; list of mscx-decoded-note, NIL for rests
-  source)     ; original MSCX node, useful for later extras/debug
+  type							    ; :chord or :rest
+  duration						    ; integer ticks
+  notes							    ; list of mscx-decoded-note, NIL for rests
+  source						    ; original MSCX node, useful for later extras/debug
+  grace-p
+  grace-after-p
+  grace-marker
+  )
 
 (defun mscx-note-pitch (note-node)
   "Return MSCX MIDI pitch number, e.g. 60 for middle C."
@@ -271,11 +275,15 @@ MSCX Division is the number of ticks in one quarter note."
                           :tpc (mscx-note-tpc note-node)))
 
 (defun decode-mscx-chord (chord-node division signature)
-  (make-mscx-decoded-event :type :chord
-                           :duration (mscx-duration-ticks chord-node division signature)
-                           :notes (loop for note in (mscx-children-named chord-node :|Note|)
-                                        collect (decode-mscx-note note))
-                           :source chord-node))
+  (let ((marker (mscx-grace-marker chord-node)))
+    (make-mscx-decoded-event :type :chord
+                             :duration (mscx-duration-ticks chord-node division signature)
+                             :notes (loop for note in (mscx-children-named chord-node :|Note|)
+                                          collect (decode-mscx-note note))
+                             :source chord-node
+                             :grace-p (and marker t)
+                             :grace-after-p (and marker (mscx-grace-after-p chord-node))
+                             :grace-marker marker)))
 
 (defun decode-mscx-rest (rest-node division signature)
   (make-mscx-decoded-event :type :rest
@@ -298,9 +306,11 @@ MSCX Division is the number of ticks in one quarter note."
     (make-instance 'om::chord :lmidic midics :lvel vels)))
 
 (defun mscx-decoded-event-pulse (decoded-event)
-  "Return positive pulse for chords, negative pulse for rests."
-  (let ((dur (mscx-decoded-event-duration decoded-event)))
-    (if (eq (mscx-decoded-event-type decoded-event) :rest) (- dur) dur)))
+  "Return positive pulse for chords, negative pulse for rests.
+Grace chords return 0: their durationType is visual only."
+  (cond ((mscx-decoded-event-grace-p decoded-event) 0)
+        (t (let ((dur (mscx-decoded-event-duration decoded-event)))
+             (if (eq (mscx-decoded-event-type decoded-event) :rest) (- dur) dur)))))
 
 (defun mscx-note-event->om-chord-or-nil (decoded-event)
   "Return OM chord for decoded chord events, NIL for rests."
@@ -325,6 +335,62 @@ This is only for implicit AUTO material: no MSCX Tuplet and no explicit BeamMode
   (and *mscx-import-use-om-simple-tree-for-auto*
        (not (mscx-measure-has-tuplets-p measure-node))
        (not (mscx-measure-has-explicit-beam-modes-p measure-node))))
+
+
+;;; ------------------------------------------------------------
+;;; grace notes
+;;; ------------------------------------------------------------
+
+(defun mscx-grace-marker (chord-node)
+  "Return grace marker symbol if CHORD-NODE is a MuseScore grace chord."
+  (some #'(lambda (tag)
+            (when (mscx-child chord-node tag) tag))
+        '(:|acciaccatura|
+          :|appoggiatura|
+          :|grace4|
+          :|grace8|
+          :|grace16|
+          :|grace32|
+          :|grace4after|
+          :|grace8after|
+          :|grace16after|
+          :|grace32after|)))
+
+(defun mscx-grace-chord-p (node)
+  (and (mscx-chord-p node)
+       (mscx-grace-marker node)))
+
+(defun mscx-grace-after-p (node)
+  (let ((marker (mscx-grace-marker node)))
+    (and marker
+         (search "after" (string-downcase (symbol-name marker))))))
+
+(defun mscx-token-grace-p (token)
+  (mscx-decoded-event-grace-p (mscx-rhythm-token-decoded-event token)))
+
+(defun mscx-token->om-pulse (token division)
+  "Convert token pulse to OM tree unit where quarter note = 1."
+  (/ (mscx-rhythm-token-actual-pulse token) division))
+
+(defun mscx-grace-group-tree (n)
+  (list 0 (loop repeat n collect 1)))
+
+(defun mscx-tokens->om-grace-measure-tree (tokens division)
+  "Build simple OM measure tree preserving MuseScore/OM grace groups as (0 (...))."
+  (let ((tree nil)
+        (pending-graces 0))
+    (labels ((flush-graces ()
+               (when (> pending-graces 0)
+                 (push (mscx-grace-group-tree pending-graces) tree)
+                 (setf pending-graces 0))))
+      (dolist (token tokens)
+        (if (mscx-token-grace-p token)
+            (incf pending-graces)
+            (progn
+              (flush-graces)
+              (push (mscx-token->om-pulse token division) tree))))
+      (flush-graces))
+    (reverse tree)))
 
 ;;; ------------------------------------------------------------
 ;;; Tuplets and beam-span grouping
@@ -675,8 +741,8 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 
 	 ;; Token pass used both for explicit beam-spans and OM simple->tree fallback.
 	 (token-state (make-mscx-import-state :division division
-                                     :signature signature
-                                     :measure-index (mscx-import-state-measure-index state)))
+					      :signature signature
+					      :measure-index (mscx-import-state-measure-index state)))
 
 	 (tokens (and (or *mscx-import-use-beam-spans*
 			  *mscx-import-use-om-simple-tree-for-auto*)
@@ -697,6 +763,8 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 				    (not (mscx-measure-has-tuplets-p measure-node))
 				    ;; Important: partial BeamMode overrides should not block OM AUTO.
 				    (null beam-spans)))
+	 ;; check for grace notes
+	 (has-grace-p (and tokens (some #'mscx-token-grace-p tokens)))
 
 	 (chords nil)
 	 (active-tuplets nil)
@@ -750,7 +818,8 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
                       (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
                       (om-chord (mscx-note-event->om-chord-or-nil decoded)))
                  (start-beam-spans-at event-order)
-                 (om::add-new-pulse tree-builder pulse)
+                 (unless (mscx-decoded-event-grace-p decoded) ;dont add grace-notes as ordinary pulse
+		   (om::add-new-pulse tree-builder pulse))
                  (when om-chord (push om-chord chords))
                  (finish-beam-spans-at event-order)
                  (incf event-order)
@@ -766,9 +835,10 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
             (mapcar #'mscx-active-tuplet-id active-tuplets))
       (loop while active-tuplets do (om::pop-tuplet tree-builder) (pop active-tuplets)))
     (make-mscx-measure-data :signature signature
-                            :tree (if use-om-simple-tree-p
-                                      (mscx-tokens->om-simple-measure-tree tokens signature division)
-                                      (om::get-tree tree-builder))
+                            :tree (cond
+				    (has-grace-p (mscx-tokens->om-grace-measure-tree tokens division))
+				    (use-om-simple-tree-p (mscx-tokens->om-simple-measure-tree tokens signature division))
+				    (t (om::get-tree tree-builder)))
                             :chords (reverse chords)
                             :tempo tempo
                             :division division)))
