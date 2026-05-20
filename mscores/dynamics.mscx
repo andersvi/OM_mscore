@@ -71,7 +71,6 @@
 				<Note>
 				<pitch>73</pitch>
 				<tpc>21</tpc>
-				<velocity>127</velocity>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -154,6 +153,62 @@
 				<pitch>60</pitch>
 				<tpc>14</tpc>
 				<velocity>127</velocity>
+				</Note>
+				</Chord>
+			<BarLine>
+			<subtype>normal</subtype>
+			</BarLine>
+			</voice>
+			</Measure>
+			<Measure>
+			<voice>
+				<Dynamic>
+				<subtype>p</subtype>
+				<velocity>49</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>45</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Dynamic>
+				<subtype>fff</subtype>
+				<velocity>126</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>127</velocity>
+				</Note>
+				</Chord>
+				<Dynamic>
+				<subtype>ppp</subtype>
+				<velocity>16</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				<velocity>0</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

@@ -713,6 +713,14 @@ FREE is the written duration used for durationType."
 ;;  (:fff 127))
 
 
+(defvar *mscx-current-velocity* :unset)
+(defvar *mscx-current-dynamic-symbol* :unset)
+
+;; to write <Dynamic> signs for each notes velocity, set to 't':
+(defparameter *mscx-export-velocities-as-dynamics* t)
+;; usage: workaround for mscore playback only reacts to symbolic dynamic signs, not notes <velocity> value
+;; usage: debug dynamic output
+
 
 (defun vel-extra-for-chord (chord)
   (get-extra-by-kind chord "vel"))
@@ -730,6 +738,27 @@ FREE is the written duration used for durationType."
 (defun dynamic-symbol->mscx-velocity (dyn)
   (or (cadr (assoc dyn *mscx-dynamic-velocities* :test #'equal))
       80))
+
+
+(defun mscx-velocity->dynamic-symbol (vel)
+  "Return nearest dynamic symbol for VEL using *mscx-dynamic-velocities*."
+  (car (first
+        (sort (copy-list *mscx-dynamic-velocities*)
+              #'<
+              :key (lambda (entry)
+                     (abs (- vel (second entry))))))))
+
+(defun mscx-velocity-dynamic-as-needed (vel)
+  "Optionally emit <Dynamic> when velocity maps to a new dynamic symbol."
+  (when *mscx-export-velocities-as-dynamics*
+    (let ((dyn (mscx-velocity->dynamic-symbol vel)))
+      (when (or (eq *mscx-current-dynamic-symbol* :unset)
+                (not (equal dyn *mscx-current-dynamic-symbol*)))
+        (setf *mscx-current-dynamic-symbol* dyn)
+        (dynamic-as-mscx dyn)))))
+
+
+
 
 (defun dynamic-as-mscx (dyn)
   (list "<Dynamic>"
@@ -1312,10 +1341,12 @@ Only basic chord/note content is preserved."
 		    (accidental (getf pdata :accidental))
 		    (vel (om::get-object-vel note)))
 	       (append
-		(list "<Note>"
-		      (format nil "<pitch>~D</pitch>" midi)
-		      (format nil "<tpc>~D</tpc>" tpc)
-		      (format nil "<velocity>~D</velocity>" vel))
+		(remove nil
+			(list "<Note>"
+			      (format nil "<pitch>~D</pitch>" midi)
+			      (format nil "<tpc>~D</tpc>" tpc)
+			      (mscx-note-velocity-as-needed vel)))
+		
 		(mscx-note-accidental-element accidental)
 		(list "</Note>"))))
      
@@ -1337,6 +1368,9 @@ Only basic chord/note content is preserved."
 	   (slur-spanners (mscx-slur-spanners self))
 	   (text-extra (text-extra-as-mscx self))
 	   (vel-extra (vel-extra-as-mscx self))
+	   (auto-dynamic (and (null vel-extra)
+			      (mscx-velocity-dynamic-as-needed
+			       (om::get-object-vel self))))
 	   (char-extra (char-extras-as-mscx self))
 	   (grace-notes-obj (and (fboundp 'om::gnotes) (om::gnotes self)))
 	   (graces (and grace-notes-obj
@@ -1355,6 +1389,7 @@ Only basic chord/note content is preserved."
        ;; ensure correct list order here, and below in om::rest, order decides semantics in output
        text-extra
        vel-extra
+       auto-dynamic
        (list "<Chord>")
        (when beam-mode
 	 (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
@@ -1380,9 +1415,10 @@ Only basic chord/note content is preserved."
 	       (append
 		(list "<Note>")
 		tie-spanner
-		(list (format nil "<pitch>~D</pitch>" midi)
-		      (format nil "<tpc>~D</tpc>" tpc)
-		      (format nil "<velocity>~D</velocity>" vel))
+		(remove nil
+			(list (format nil "<pitch>~D</pitch>" midi)
+			      (format nil "<tpc>~D</tpc>" tpc)
+			      (mscx-note-velocity-as-needed vel)))
 		(mscx-note-accidental-element accidental)
 		head-extra
 		(list "</Note>"))))
@@ -1670,11 +1706,21 @@ Otherwise use the initial tempo value."
      "</voice>"
      "</Measure>")))
 
-(defmethod cons-mscx-expr ((self om::voice) &key free (clef '(G 2)) (notation-scale :from-object) part)
+(defmethod cons-mscx-expr ((self om::voice)
+			   &key
+			     free
+			     (clef '(G 2)) (notation-scale :from-object)
+			     part
+			     (velocities-as-dynamics *mscx-export-velocities-as-dynamics*))
+
   (let ((voicenum part)
         (measures (om::inside self)))
     (let ((*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
-          (*mscx-tempo-map* (build-voice-tempo-map self measures)))
+          (*mscx-tempo-map* (build-voice-tempo-map self measures))
+	  (*mscx-export-velocities-as-dynamics* velocities-as-dynamics)
+	  (*mscx-current-velocity* :unset)
+	  (*mscx-current-dynamic-symbol* :unset)
+	  )
       (list
        (format nil "<Staff id=\"~D\">" voicenum)
        (loop for mes in measures
