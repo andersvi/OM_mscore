@@ -274,15 +274,18 @@ Exporter wrote raw = 4 * UNIT * BPM / 60."
   (/ 1 (om::find-beat-symbol (second signature))))
 
 
+;;; ------------------------------------------------------------
+;;; Note / chord / rest decoding
+;;; ------------------------------------------------------------
+
+(defparameter *mscx-default-import-velocity* 64)	    ; 64 is default in mscore
+
 (defstruct mscx-import-state
   (division 480)
   (signature '(4 4))
   (measure-index 0)
-  tempos)
-
-;;; ------------------------------------------------------------
-;;; Note / chord / rest decoding
-;;; ------------------------------------------------------------
+  tempos
+  (current-velocity *mscx-default-import-velocity*))	    
 
 (defstruct mscx-decoded-note
   midic
@@ -299,6 +302,7 @@ Exporter wrote raw = 4 * UNIT * BPM / 60."
   grace-marker
   )
 
+
 (defun mscx-note-pitch (note-node)
   "Return MSCX MIDI pitch number, e.g. 60 for middle C."
   (mscx-child-number note-node :|pitch| nil))
@@ -308,7 +312,7 @@ Exporter wrote raw = 4 * UNIT * BPM / 60."
   (let ((pitch (mscx-note-pitch note-node)))
     (when pitch (* 100 pitch))))
 
-(defun mscx-note-velocity (note-node &optional (default 100))
+(defun mscx-note-velocity (note-node &optional default)
   (mscx-child-number note-node :|velocity| default))
 
 (defun mscx-note-tpc (note-node)
@@ -316,7 +320,7 @@ Exporter wrote raw = 4 * UNIT * BPM / 60."
 
 (defun decode-mscx-note (note-node)
   (make-mscx-decoded-note :midic (mscx-note-midic note-node)
-                          :velocity (mscx-note-velocity note-node)
+                          :velocity (mscx-note-velocity note-node nil)
                           :tpc (mscx-note-tpc note-node)))
 
 (defun decode-mscx-chord (chord-node division signature)
@@ -336,18 +340,40 @@ Exporter wrote raw = 4 * UNIT * BPM / 60."
                            :notes nil
                            :source rest-node))
 
+;; dynamic helpers
+
+(defun mscx-dynamic-subtype (dynamic-node)
+  (mscx-child-text dynamic-node :|subtype| nil))
+
+(defun mscx-dynamic-velocity (dynamic-node)
+  (mscx-child-number dynamic-node :|velocity| nil))
+
+(defun mscx-dynamic-subtype->om-symbol (subtype)
+  (when subtype
+    (intern (string-upcase subtype) :keyword)))
+
+
+
+
 (defun decode-mscx-event (event-node division signature)
   (cond ((mscx-chord-p event-node) (decode-mscx-chord event-node division signature))
         ((mscx-rest-p event-node) (decode-mscx-rest event-node division signature))
         (t (error "Not an MSCX note event: ~S" event-node))))
 
-(defun mscx-decoded-chord->om-chord (decoded-event)
-  "Convert a decoded :chord event to an OM chord."
+(defun mscx-decoded-chord->om-chord (decoded-event state)
+  "Convert a decoded :chord event to an OM chord, using/updating velocity stream."
   (unless (eq (mscx-decoded-event-type decoded-event) :chord)
     (error "Not a decoded chord event: ~S" decoded-event))
   (let* ((notes (mscx-decoded-event-notes decoded-event))
          (midics (remove nil (mapcar #'mscx-decoded-note-midic notes)))
-         (vels (remove nil (mapcar #'mscx-decoded-note-velocity notes))))
+         (vels (loop for note in notes
+                     for explicit-vel = (mscx-decoded-note-velocity note)
+                     for vel = (or explicit-vel
+                                   (mscx-import-state-current-velocity state)
+                                   *mscx-default-import-velocity*)
+                     do (when explicit-vel
+                          (setf (mscx-import-state-current-velocity state) explicit-vel))
+                     collect vel)))
     (make-instance 'om::chord :lmidic midics :lvel vels)))
 
 (defun mscx-decoded-event-pulse (decoded-event)
@@ -357,10 +383,10 @@ Grace chords return 0: their durationType is visual only."
         (t (let ((dur (mscx-decoded-event-duration decoded-event)))
              (if (eq (mscx-decoded-event-type decoded-event) :rest) (- dur) dur)))))
 
-(defun mscx-note-event->om-chord-or-nil (decoded-event)
+(defun mscx-note-event->om-chord-or-nil (decoded-event state)
   "Return OM chord for decoded chord events, NIL for rests."
   (when (eq (mscx-decoded-event-type decoded-event) :chord)
-    (mscx-decoded-chord->om-chord decoded-event)))
+    (mscx-decoded-chord->om-chord decoded-event state)))
 
 (defun mscx-measure-has-tuplets-p (measure-node)
   "Return true if MEASURE-NODE contains Tuplet nodes."
@@ -927,10 +953,14 @@ BeamMode is first parsed into conservative spans, then applied as pure grouping.
 				     (when bpm
 				       (push (list beat-index (list unit bpm nil)) tempos))))
 	      
+	      ((mscx-dynamic-p item) (let ((dyn-vel (mscx-dynamic-velocity item)))
+				       (when dyn-vel
+					 (setf (mscx-import-state-current-velocity state) dyn-vel))))
+	      
 	      ((mscx-note-event-p item) (let* ((decoded (decode-mscx-event item division signature))
 					       (written-pulse (mscx-decoded-event-pulse decoded))
 					       (pulse (mscx-scale-pulse-for-active-tuplets written-pulse active-tuplets))
-					       (om-chord (mscx-note-event->om-chord-or-nil decoded)))
+					       (om-chord (mscx-note-event->om-chord-or-nil decoded state)))
 					  (start-beam-spans-at event-order)
 					  (unless (mscx-decoded-event-grace-p decoded)
 					    (om::add-new-pulse tree-builder pulse)
