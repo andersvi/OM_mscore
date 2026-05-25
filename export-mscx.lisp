@@ -679,9 +679,7 @@ FREE is the written duration used for durationType."
 ;;
 ;; uses OMs various vel lookups etc in editor/scoreeditor/scoretools.lisp
 ;; 
-
-
-;; were trying to support OMs - per-note dynamics (vel-extra)
+;; trying to support OMs - per-note dynamics (vel-extra)
 ;; 
 (defparameter *mscx-dynamics-size* "0.6")
 (defparameter *mscx-dynamics-direction* "up")
@@ -716,10 +714,15 @@ FREE is the written duration used for durationType."
 (defvar *mscx-current-velocity* :unset)
 (defvar *mscx-current-dynamic-symbol* :unset)
 
-;; to write <Dynamic> signs for each notes velocity, set to 't':
+;; 
+;; :velocities-as-dynamics nil ; default, bare vel-extra gir <Dynamic>
+;; :velocities-as-dynamics t   ; velocity-endringer gir ekstra <Dynamic>tegn
+;; 
 (defparameter *mscx-export-velocities-as-dynamics* t)
-;; usage: workaround for mscore playback only reacts to symbolic dynamic signs, not notes <velocity> value
-;; usage: debug dynamic output
+
+;; usage 1: workaround: mscore playbacks only reacts to _symbolic_ dynamic signs, not its velocity-value
+;; 
+;; usage 2: debug dynamic
 
 
 (defun vel-extra-for-chord (chord)
@@ -1345,7 +1348,7 @@ Only basic chord/note content is preserved."
 			(list "<Note>"
 			      (format nil "<pitch>~D</pitch>" midi)
 			      (format nil "<tpc>~D</tpc>" tpc)
-			      (mscx-note-velocity-as-needed vel)))
+			      (mscx-velocity-dynamic-as-needed vel)))
 		
 		(mscx-note-accidental-element accidental)
 		(list "</Note>"))))
@@ -1418,7 +1421,7 @@ Only basic chord/note content is preserved."
 		(remove nil
 			(list (format nil "<pitch>~D</pitch>" midi)
 			      (format nil "<tpc>~D</tpc>" tpc)
-			      (mscx-note-velocity-as-needed vel)))
+			      (mscx-velocity-dynamic-as-needed vel)))
 		(mscx-note-accidental-element accidental)
 		head-extra
 		(list "</Note>"))))
