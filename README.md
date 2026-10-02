@@ -1,5 +1,7 @@
 # OM–MuseScore MSCX
 
+<img width="760" alt="Skjermbilde fra 2026-10-02 15-05-47" src="resources/OM2MuseScore.png" />
+
 A two-way bridge between OpenMusic and MuseScore notation.
 
 It moves musical material between algorithmic composition in OpenMusic and clean, editable notation in MuseScore.
