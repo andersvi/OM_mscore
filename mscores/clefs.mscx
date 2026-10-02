@@ -67,12 +67,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -80,7 +85,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -88,7 +92,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -96,7 +99,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -106,12 +108,17 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>whole</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -137,12 +144,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -150,7 +162,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -158,7 +169,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -166,7 +176,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -176,12 +185,17 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>whole</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -207,12 +221,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -220,7 +239,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -228,7 +246,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -236,7 +253,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -246,12 +262,17 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>whole</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -349,12 +370,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -362,7 +388,6 @@
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -370,7 +395,6 @@
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -378,7 +402,6 @@
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -388,12 +411,17 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>whole</durationType>
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

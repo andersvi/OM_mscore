@@ -27,6 +27,12 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
@@ -40,7 +46,6 @@
 				</Spanner>
 				<pitch>65</pitch>
 				<tpc>13</tpc>
-				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalNaturalOneArrowUp</subtype>
 				</Accidental>
@@ -58,7 +63,6 @@
 				</Spanner>
 				<pitch>65</pitch>
 				<tpc>13</tpc>
-				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalNaturalOneArrowUp</subtype>
 				</Accidental>
@@ -77,7 +81,6 @@
 				</Spanner>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
 				</Accidental>
@@ -95,7 +98,6 @@
 				</Spanner>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
 				</Accidental>
@@ -108,6 +110,12 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
@@ -121,7 +129,6 @@
 				</Spanner>
 				<pitch>66</pitch>
 				<tpc>20</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalSharpOneArrowDown</subtype>
 				</Accidental>
@@ -137,7 +144,6 @@
 				</Spanner>
 				<pitch>75</pitch>
 				<tpc>23</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalSharpOneArrowDown</subtype>
 				</Accidental>
@@ -155,7 +161,6 @@
 				</Spanner>
 				<pitch>66</pitch>
 				<tpc>20</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalSharpOneArrowDown</subtype>
 				</Accidental>
@@ -170,7 +175,6 @@
 				</Spanner>
 				<pitch>75</pitch>
 				<tpc>23</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalSharpOneArrowDown</subtype>
 				</Accidental>
@@ -189,7 +193,6 @@
 				</Spanner>
 				<pitch>62</pitch>
 				<tpc>16</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalNaturalOneArrowDown</subtype>
 				</Accidental>
@@ -207,7 +210,6 @@
 				</Spanner>
 				<pitch>62</pitch>
 				<tpc>16</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalNaturalOneArrowDown</subtype>
 				</Accidental>

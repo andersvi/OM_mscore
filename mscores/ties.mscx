@@ -27,12 +27,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -58,7 +63,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -74,7 +78,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -91,7 +94,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -107,7 +109,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Rest>
@@ -128,7 +129,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -150,7 +150,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -166,7 +165,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				<Note>
 				<Spanner type="Tie">
@@ -179,7 +177,6 @@
 				</Spanner>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -194,7 +191,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				<Note>
 				<Spanner type="Tie">
@@ -206,7 +202,6 @@
 				</Spanner>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -232,7 +227,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -256,7 +250,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -272,7 +265,6 @@
 				</Spanner>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Rest>
@@ -285,7 +277,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>

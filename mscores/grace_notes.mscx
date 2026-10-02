@@ -33,7 +33,6 @@
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -42,7 +41,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -51,7 +49,6 @@
 				<Note>
 				<pitch>81</pitch>
 				<tpc>17</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -60,7 +57,6 @@
 				<Note>
 				<pitch>62</pitch>
 				<tpc>16</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -69,7 +65,6 @@
 				<Note>
 				<pitch>59</pitch>
 				<tpc>19</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -78,7 +73,6 @@
 				<Note>
 				<pitch>73</pitch>
 				<tpc>21</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -87,23 +81,19 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
-				<Spanner type="Slur">
-				<Slur/>
-				<next>
-					<location>
-					<fractions>3/4</fractions>
-					</location>
-				</next>
-				</Spanner>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -111,7 +101,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -120,7 +109,6 @@
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -129,7 +117,6 @@
 				<Note>
 				<pitch>79</pitch>
 				<tpc>15</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -137,7 +124,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -146,7 +132,6 @@
 				<Note>
 				<pitch>96</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -155,22 +140,13 @@
 				<Note>
 				<pitch>42</pitch>
 				<tpc>20</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
-				<Spanner type="Slur">
-				<prev>
-					<location>
-					<fractions>-3/4</fractions>
-					</location>
-				</prev>
-				</Spanner>
 				<Note>
 				<pitch>88</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

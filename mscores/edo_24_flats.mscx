@@ -27,44 +27,44 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
-				</Accidental>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>61</pitch>
-				<tpc>21</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
-				</Accidental>
 				<pitch>62</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
+				<tpc>16</tpc>
+				<Accidental>
+				<subtype>accidentalThreeQuarterTonesFlatZimmermann</subtype>
+				</Accidental>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>61</pitch>
+				<tpc>9</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>62</pitch>
+				<tpc>16</tpc>
+				<Accidental>
+				<subtype>accidentalQuarterToneFlatStein</subtype>
+				</Accidental>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -74,44 +74,44 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
 				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
+				<subtype>accidentalQuarterToneFlatStein</subtype>
 				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
-				<velocity>80</velocity>
+				<tpc>8</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
 				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
+				<subtype>accidentalThreeQuarterTonesFlatZimmermann</subtype>
 				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -121,40 +121,88 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>61</pitch>
-				<tpc>21</tpc>
-				<velocity>100</velocity>
+				<tpc>9</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>61</pitch>
-				<tpc>21</tpc>
-				<velocity>100</velocity>
+				<tpc>9</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
-				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
-				</Accidental>
 				<pitch>62</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
+				<tpc>16</tpc>
+				<Accidental>
+				<subtype>accidentalQuarterToneFlatStein</subtype>
+				</Accidental>
+				</Note>
+				</Chord>
+			<BarLine>
+			<subtype>normal</subtype>
+			</BarLine>
+			</voice>
+			</Measure>
+			<Measure>
+			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
+				<Accidental>
+				<subtype>accidentalQuarterToneFlatStein</subtype>
+				</Accidental>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>66</pitch>
+				<tpc>8</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
+				<Accidental>
+				<subtype>accidentalThreeQuarterTonesFlatZimmermann</subtype>
+				</Accidental>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -169,86 +217,33 @@
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
-				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>66</pitch>
-				<tpc>20</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
-				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-			<BarLine>
-			<subtype>normal</subtype>
-			</BarLine>
-			</voice>
-			</Measure>
-			<Measure>
-			<voice>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>67</pitch>
 				<tpc>15</tpc>
-				<velocity>80</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
 				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneSharpArrowDown</subtype>
+				<subtype>accidentalQuarterToneFlatStein</subtype>
 				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>66</pitch>
-				<tpc>20</tpc>
-				<velocity>80</velocity>
+				<tpc>8</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
+				<pitch>67</pitch>
+				<tpc>15</tpc>
 				<Accidental>
-				<role>1</role>
-				<subtype>accidentalQuarterToneFlatArrowUp</subtype>
+				<subtype>accidentalThreeQuarterTonesFlatZimmermann</subtype>
 				</Accidental>
-				<pitch>66</pitch>
-				<tpc>13</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

@@ -35,12 +35,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -58,7 +63,6 @@
 				<Note>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -67,7 +71,6 @@
 				<Note>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -76,7 +79,6 @@
 				<Note>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -85,7 +87,6 @@
 				<Note>
 				<pitch>71</pitch>
 				<tpc>19</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -95,7 +96,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -104,7 +104,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -122,7 +121,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -131,7 +129,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -149,7 +146,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -158,7 +154,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -167,7 +162,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -186,7 +180,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -204,7 +197,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -213,7 +205,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -222,7 +213,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -232,7 +222,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -241,7 +230,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -250,7 +238,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -259,7 +246,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -268,7 +254,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -278,7 +263,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -305,12 +289,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -318,7 +307,6 @@
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -336,7 +324,6 @@
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -345,7 +332,6 @@
 				<Note>
 				<pitch>74</pitch>
 				<tpc>16</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -354,7 +340,6 @@
 				<Note>
 				<pitch>64</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -363,7 +348,6 @@
 				<Note>
 				<pitch>76</pitch>
 				<tpc>18</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

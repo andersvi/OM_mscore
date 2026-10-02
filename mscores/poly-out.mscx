@@ -35,12 +35,17 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -48,7 +53,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -66,7 +70,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -75,7 +78,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -84,7 +86,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -103,7 +104,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Tuplet>
@@ -121,7 +121,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -130,7 +129,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -139,7 +137,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -148,7 +145,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -157,7 +153,129 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<endTuplet/>
+			<BarLine>
+			<subtype>normal</subtype>
+			</BarLine>
+			</voice>
+			</Measure>
+			<Measure>
+			<voice>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>5</actualNotes>
+				<baseNote>16th</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>5</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -180,6 +298,31 @@
 					<sigN>4</sigN>
 					<sigD>4</sigD>
 					</TimeSig>
+				<Tempo>
+				<tempo>1</tempo>
+				<followText>1</followText>
+				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
+				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
 				<Tuplet>
 				<normalNotes>2</normalNotes>
 				<actualNotes>3</actualNotes>
@@ -189,6 +332,48 @@
 				<text>3</text>
 				</Number>
 				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>end</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<endTuplet/>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
 				<Tuplet>
 				<normalNotes>4</normalNotes>
 				<actualNotes>5</actualNotes>
@@ -198,18 +383,12 @@
 				<text>5</text>
 				</Number>
 				</Tuplet>
-				<Tempo>
-				<tempo>1</tempo>
-				<followText>1</followText>
-				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
-				</Tempo>
 				<Chord>
 				<BeamMode>begin</BeamMode>
 				<durationType>16th</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -218,7 +397,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -227,7 +405,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -236,7 +413,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -245,17 +421,62 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
+				<endTuplet/>
+			<BarLine>
+			<subtype>normal</subtype>
+			</BarLine>
+			</voice>
+			</Measure>
+			<Measure>
+			<voice>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<durationType>quarter</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>2</normalNotes>
+				<actualNotes>3</actualNotes>
+				<baseNote>eighth</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>3</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>eighth</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
 				<Chord>
 				<BeamMode>end</BeamMode>
 				<durationType>eighth</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
@@ -274,44 +495,59 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Tuplet>
+				<normalNotes>4</normalNotes>
+				<actualNotes>5</actualNotes>
+				<baseNote>16th</baseNote>
+				<Number>
+				<style>tuplet</style>
+				<text>5</text>
+				</Number>
+				</Tuplet>
+				<Chord>
+				<BeamMode>begin</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<BeamMode>mid</BeamMode>
-				<durationType>eighth</durationType>
+				<durationType>16th</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
+				</Note>
+				</Chord>
+				<Chord>
+				<BeamMode>mid</BeamMode>
+				<durationType>16th</durationType>
+				<Note>
+				<pitch>60</pitch>
+				<tpc>14</tpc>
 				</Note>
 				</Chord>
 				<Chord>
 				<BeamMode>end</BeamMode>
-				<durationType>eighth</durationType>
+				<durationType>16th</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<endTuplet/>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
-				<Chord>
-				<durationType>quarter</durationType>
-				<Note>
-				<pitch>60</pitch>
-				<tpc>14</tpc>
-				<velocity>100</velocity>
-				</Note>
-				</Chord>
+				<endTuplet/>
 			<BarLine>
 			<subtype>normal</subtype>
 			</BarLine>

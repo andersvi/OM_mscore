@@ -38,7 +38,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>20</velocity>
+					<Dynamic>
+					<subtype>ppp</subtype>
+					<velocity>16</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -52,7 +57,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>40</velocity>
+					<Dynamic>
+					<subtype>pp</subtype>
+					<velocity>33</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -66,7 +76,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>127</velocity>
+					<Dynamic>
+					<subtype>fff</subtype>
+					<velocity>126</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				<Note>
 				<pitch>73</pitch>
@@ -84,12 +99,16 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>122</velocity>
 				</Note>
 				<Note>
 				<pitch>70</pitch>
 				<tpc>24</tpc>
-				<velocity>15</velocity>
+					<Dynamic>
+					<subtype>ppp</subtype>
+					<velocity>16</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -110,7 +129,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>85</velocity>
+					<Dynamic>
+					<subtype>mf</subtype>
+					<velocity>80</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -124,7 +148,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
+					<Dynamic>
+					<subtype>f</subtype>
+					<velocity>96</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -138,12 +167,17 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>115</velocity>
+					<Dynamic>
+					<subtype>ff</subtype>
+					<velocity>112</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 				<Dynamic>
-				<subtype>fff</subtype>
-				<velocity>126</velocity>
+				<subtype>p</subtype>
+				<velocity>49</velocity>
 				<dynamicsSize>0.6</dynamicsSize>
 				<direction>up</direction>
 				</Dynamic>
@@ -152,7 +186,12 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>127</velocity>
+					<Dynamic>
+					<subtype>p</subtype>
+					<velocity>49</velocity>
+					<dynamicsSize>0.6</dynamicsSize>
+					<direction>up</direction>
+					</Dynamic>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -173,7 +212,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>45</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -194,7 +232,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>127</velocity>
 				</Note>
 				</Chord>
 				<Dynamic>
@@ -208,7 +245,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>0</velocity>
 				</Note>
 				</Chord>
 			<BarLine>

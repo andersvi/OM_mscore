@@ -27,28 +27,43 @@
 				<followText>1</followText>
 				<text><sym>metNoteQuarterUp</sym><font face="Edwin"/> = 60</text>
 				</Tempo>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>26</tpc>
-				<velocity>80</velocity>
 				</Note>
 				</Chord>
+				<Dynamic>
+				<subtype>f</subtype>
+				<velocity>96</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>2</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 				<Chord>
@@ -56,7 +71,6 @@
 				<Note>
 				<pitch>59</pitch>
 				<tpc>31</tpc>
-				<velocity>100</velocity>
 				</Note>
 				</Chord>
 			<BarLine>
@@ -66,12 +80,17 @@
 			</Measure>
 			<Measure>
 			<voice>
+				<Dynamic>
+				<subtype>mf</subtype>
+				<velocity>80</velocity>
+				<dynamicsSize>0.6</dynamicsSize>
+				<direction>up</direction>
+				</Dynamic>
 				<Chord>
 				<durationType>quarter</durationType>
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
 				</Accidental>
@@ -82,7 +101,6 @@
 				<Note>
 				<pitch>60</pitch>
 				<tpc>14</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalThreeQuarterTonesSharpStein</subtype>
 				</Accidental>
@@ -93,7 +111,6 @@
 				<Note>
 				<pitch>62</pitch>
 				<tpc>16</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalQuarterToneSharpStein</subtype>
 				</Accidental>
@@ -104,7 +121,6 @@
 				<Note>
 				<pitch>65</pitch>
 				<tpc>13</tpc>
-				<velocity>80</velocity>
 				<Accidental>
 				<subtype>accidentalThreeQuarterTonesSharpStein</subtype>
 				</Accidental>
