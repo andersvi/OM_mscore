@@ -1,10 +1,12 @@
-# OM–MuseScore MSCX
+# OpenMusic &lrarr; Mscore - bridge between OpenMusic and MuseScore
 
 <img width="760" alt="Skjermbilde fra 2026-10-02 15-05-47" src="resources/OM2MuseScore.png" />
 
 A two-way bridge between OpenMusic and MuseScore notation.
 
-It moves musical material between algorithmic composition in OpenMusic and clean, editable notation in MuseScore.
+Provides moving musical material between algorithmic composition in
+OpenMusic and clean, editable notation in MuseScore.
+
 
 ## Main files
 
@@ -28,5 +30,28 @@ With OpenMusic's MusicXML support already loaded:
 (import-mscx path)
 ```
 
-`export-mscx` writes a MuseScore score from an OM voice or poly; `import-mscx`
-returns an OM poly from a MuseScore score.
+&rarr; `export-mscx` writes a MuseScore score from an OM voice or poly;
+<br>
+&rarr; `import-mscx` returns an OM Poly object from a MuseScore score.
+
+### More info, documentation and resources
+
+&rarr; Project pages: [https://github.com/andersvi/OM_mscore](https://github.com/andersvi/OM_mscore)
+<br>
+&rarr; [MuseScore](https://musescore.org/nb)
+
+------
+
+### Download
+
+## [Releases page](https://github.com/andersvi/OM_mscore/releases)
+
+------
+
+### Credits
+
+Design and development: Anders Vinjar
+
+OM_mscore uses code from Karim Haddads MusicXML package, part of [OpenMusic](https://github.com/openmusic-project/openmusic/) 
+
+------
