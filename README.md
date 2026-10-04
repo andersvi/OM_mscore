@@ -44,7 +44,7 @@ With OpenMusic's MusicXML support already loaded:
 
 ### Download
 
-## [Releases page](https://github.com/andersvi/OM_mscore/releases)
+## [Latest release](https://github.com/andersvi/OM_mscore/releases/latest)
 
 ------
 
