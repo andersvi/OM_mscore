@@ -5,6 +5,9 @@
 ;;; Anders Vinjar - 2026
 ;;; 
 ;;; Time-stamp: <2026-05-13 11:15:14 andersvi>
+;;; 2026-10-05: export-local measure alignment/padding; counted MSCX dots.
+;;; Existing OM objects are read only; padding is emitted directly as XML.
+;;; Interior bar-length conflicts require re-barring and raise a clear error.
 ;;
 
 
@@ -518,6 +521,11 @@ FREE is the written duration used for durationType."
 
 (defun current-mscx-dur (free)
   (if (listp free) (car free) free))
+
+(defun mscx-dots-as-xml (count)
+  "MSCX stores the dot count in ONE tag (unlike MusicXML's repeated dot tags)."
+  (when (plusp count)
+    (list (format nil "<dots>~D</dots>" count))))
 
 
 
@@ -1396,8 +1404,7 @@ Only basic chord/note content is preserved."
        (list "<Chord>")
        (when beam-mode
 	 (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
-       (loop for i from 1 to nbpoints
-	     collect "<dots>1</dots>")
+       (mscx-dots-as-xml nbpoints)
        (list (format nil "<durationType>~A</durationType>"
 		     (xml-head-to-mscx-duration-type note-head)))
 
@@ -1440,8 +1447,7 @@ Only basic chord/note content is preserved."
      (list "<Rest>")
      (when beam-mode
        (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
-     (loop for i from 1 to nbpoints
-           collect "<dots>1</dots>")
+     (mscx-dots-as-xml nbpoints)
      (list (format nil "<durationType>~A</durationType>"
                    (xml-head-to-mscx-duration-type note-head)))
      (list "</Rest>"))))
@@ -1657,50 +1663,172 @@ Otherwise use the initial tempo value."
   (equal (measure-signature a)
          (measure-signature b)))
 
-(defun emit-timesig-p (measure mesnum)
+(defvar *mscx-export-measure-plan* nil
+  "Common signatures for this export only. Never installed in the OM objects.")
+
+(defun mscx-signature-duration (signature)
+  (unless (and (listp signature) (= (length signature) 2)
+               (every (lambda (n) (and (integerp n) (plusp n))) signature))
+    (error "MSCX export: unsupported time signature ~S." signature))
+  (/ (first signature) (second signature)))
+
+(defun mscx-plan-from-signatures (voice-signatures)
+  "Build a common bar plan without moving any existing event.
+Continuing voices define each bar; their bar lengths must agree. A voice's
+last bar may be shorter and is padded during serialization. If all voices
+at a bar end there, use the longest final bar. Equal-length signatures use
+the first defining voice's spelling. Conflicting interior bar lengths need
+re-barring and are rejected rather than silently inserting time."
+  (loop with bar-count = (reduce #'max voice-signatures
+                                :key #'length :initial-value 0)
+        for index below bar-count
+        collect
+        (let* ((present
+                 (loop for signatures in voice-signatures
+                       for staff from 1
+                       for signature = (nth index signatures)
+                       when signature
+                         collect (list signature
+                                       (mscx-signature-duration signature)
+                                       (< (1+ index) (length signatures))
+                                       staff)))
+               (continuing (remove-if-not #'third present))
+               (reference
+                 (or (first continuing)
+                     (reduce (lambda (a b) (if (> (second b) (second a)) b a))
+                             present)))
+               (target (second reference)))
+          (dolist (entry present)
+            (unless (or (= (second entry) target)
+                        (and (not (third entry)) (< (second entry) target)))
+              (error "MSCX export: incompatible bar lengths at measure ~D: staff ~D has ~S, staff ~D defines ~S. Only a shorter FINAL bar can be padded automatically; interior differences require re-barring."
+                     (1+ index) (fourth entry) (first entry)
+                     (fourth reference) (first reference))))
+          (copy-list (first reference)))))
+
+(defun mscx-measure-element-duration (measure obj)
+  "The existing serializer's top-level duration, using the ORIGINAL meter.
+Groups receive their actual span here; their own serializer applies tuplets."
+  (let* ((signature (measure-signature measure))
+         (denominator (om::fdenominator signature))
+         (symbol (om::find-beat-symbol denominator)))
+    (rationalize (* 1/4 (/ (om::extent obj) (om::qvalue obj))
+                    (/ denominator symbol)))))
+
+(defun mscx-measure-content-duration (measure)
+  (loop for obj in (om::inside measure)
+        sum (mscx-measure-element-duration measure obj)))
+
+(defun mscx-build-export-measure-plan (voices)
+  "Read-only preflight. Grace notes attached to chords add no measure time."
+  (let* ((voice-measures (mapcar #'om::inside voices))
+         (plan (mscx-plan-from-signatures
+                (mapcar (lambda (measures) (mapcar #'measure-signature measures))
+                        voice-measures))))
+    (unless plan
+      (error "MSCX export: there are no measures to export."))
+    (loop for measures in voice-measures
+          for staff from 1 do
+            (loop for tail on measures
+                  for index from 0
+                  for duration = (mscx-measure-content-duration (first tail))
+                  for target = (mscx-signature-duration (nth index plan)) do
+                    (unless (and (not (minusp duration))
+                                 (<= duration target)
+                                 (or (null (rest tail)) (= duration target)))
+                      (error "MSCX export: staff ~D, measure ~D contains ~A whole notes; the common bar requires ~A. Only trailing silence can be added without moving later notes."
+                             staff (1+ index) duration target))))
+    plan))
+
+(defun mscx-rest-values (duration)
+  "Decompose trailing silence exactly into (TYPE DOTS DURATION) entries.
+No rounding: a remainder below the supported note values raises an error."
+  (unless (and (rationalp duration) (not (minusp duration)))
+    (error "MSCX export: invalid padding duration ~S." duration))
+  (let ((candidates
+          (sort (loop for (value name) in mxml::*note-types* append
+                      (loop for dots from 0 to 2
+                            collect (list name dots
+                                          (* value (- 2 (/ 1 (expt 2 dots)))))))
+                #'> :key #'third)))
+    (loop with remaining = duration
+          for value = (find-if (lambda (entry) (<= (third entry) remaining))
+                               candidates)
+          while (plusp remaining)
+          do (unless value
+               (error "MSCX export: cannot notate padding remainder ~A exactly (original gap ~A)."
+                      remaining duration))
+          collect value
+          do (decf remaining (third value)))))
+
+(defun mscx-padding-rests (duration)
+  (loop for (name dots value) in (mscx-rest-values duration)
+        append (append (list "<Rest>")
+                       (mscx-dots-as-xml dots)
+                       (list (format nil "<durationType>~(~A~)</durationType>" name)
+                             "</Rest>"))))
+
+(defun mscx-full-measure-rest (signature)
+  (list "<Rest>" "<durationType>measure</durationType>"
+        (format nil "<duration>~D/~D</duration>"
+                (first signature) (second signature))
+        "</Rest>"))
+
+(defun mscx-measure-header (signature first-measure-p timesig-p clef)
+  (append
+   (when (and first-measure-p clef)
+     (let ((name (clef-sign->mscx-clef (car clef) (cadr clef))))
+       (list "<Clef>" "<isHeader>1</isHeader>"
+             (format nil "<concertClefType>~A</concertClefType>" name)
+             (format nil "<transposingClefType>~A</transposingClefType>" name)
+             "</Clef>")))
+   (when timesig-p
+     (list "<TimeSig>"
+           (format nil "<sigN>~D</sigN>" (first signature))
+           (format nil "<sigD>~D</sigD>" (second signature))
+           "</TimeSig>"))))
+
+(defun mscx-plan-timesig-p (mesnum)
   (or (= mesnum 1)
-      (let ((prev (previous-measure measure)))
-        (or (null prev)
-            (not (same-signature-p measure prev))))))
+      (not (equal (nth (1- mesnum) *mscx-export-measure-plan*)
+                  (nth (- mesnum 2) *mscx-export-measure-plan*)))))
+
+(defun emit-timesig-p (measure mesnum)
+  (if *mscx-export-measure-plan*
+      (mscx-plan-timesig-p mesnum)
+    (or (= mesnum 1)
+        (let ((prev (previous-measure measure)))
+          (or (null prev)
+              (not (same-signature-p measure prev)))))))
 
 
 (defmethod cons-mscx-expr ((self om::measure) &key free (clef '(G 2)) (notation-scale :from-object) part)
   (let* ((mesnum free)
          (inside (om::inside self))
-         (tree (om::tree self))
-         (signature (car tree))
-         (real-beat-val (/ 1 (om::fdenominator signature)))
-         (symb-beat-val (/ 1 (om::find-beat-symbol (om::fdenominator signature)))))
+         (signature (or (nth (1- mesnum) *mscx-export-measure-plan*)
+                        (measure-signature self)))
+         (padding (if *mscx-export-measure-plan*
+                      (- (mscx-signature-duration signature)
+                         (mscx-measure-content-duration self))
+                    0)))
     (list
      "<Measure>"
      "<voice>"
-     (remove nil
-             (list
-              (when (= mesnum 1)
-                (and clef
-                     (list "<Clef>"
-                           "<isHeader>1</isHeader>"
-                           (format nil "<concertClefType>~A</concertClefType>"
-                                   (clef-sign->mscx-clef (car clef) (cadr clef)))
-                           (format nil "<transposingClefType>~A</transposingClefType>"
-                                   (clef-sign->mscx-clef (car clef) (cadr clef)))
-                           "</Clef>")))
-              (when (emit-timesig-p self mesnum)
-                (list "<TimeSig>"
-                      (format nil "<sigN>~D</sigN>" (car signature))
-                      (format nil "<sigD>~D</sigD>" (cadr signature))
-                      "</TimeSig>"))))
+     (mscx-measure-header signature (= mesnum 1)
+                          (emit-timesig-p self mesnum) clef)
 
-     (let ((running-offset 0))
-       (loop for obj in inside
-             append
-             (let* ((dur-obj-noire (/ (om::extent obj) (om::qvalue obj)))
-                    (factor (/ (* 1/4 dur-obj-noire) real-beat-val))
-                    (obj-free (* symb-beat-val factor)))
-               (prog1
-                   (let ((*mscx-current-offset* running-offset))
-                     (cons-mscx-expr obj :free obj-free :notation-scale notation-scale :part part))
-                 (incf running-offset obj-free)))))
+     (if (null inside)
+         (append (current-tempo-as-mscx) (mscx-full-measure-rest signature))
+       (let ((running-offset 0))
+         (loop for obj in inside
+               append
+               (let ((obj-free (mscx-measure-element-duration self obj)))
+                 (prog1
+                     (let ((*mscx-current-offset* running-offset))
+                       (cons-mscx-expr obj :free obj-free :notation-scale notation-scale :part part))
+                   (incf running-offset obj-free))))))
+
+     (when inside (mscx-padding-rests padding))
 
      "<BarLine>"
      "<subtype>normal</subtype>"
@@ -1708,6 +1836,16 @@ Otherwise use the initial tempo value."
 
      "</voice>"
      "</Measure>")))
+
+(defun mscx-empty-export-measure (mesnum clef)
+  "Write a missing trailing bar, including any common time-signature change."
+  (let ((signature (nth (1- mesnum) *mscx-export-measure-plan*)))
+    (list "<Measure>" "<voice>"
+          (mscx-measure-header signature (= mesnum 1)
+                               (mscx-plan-timesig-p mesnum) clef)
+          (mscx-full-measure-rest signature)
+          "<BarLine>" "<subtype>normal</subtype>" "</BarLine>"
+          "</voice>" "</Measure>")))
 
 (defmethod cons-mscx-expr ((self om::voice)
 			   &key
@@ -1719,6 +1857,9 @@ Otherwise use the initial tempo value."
   (let ((voicenum part)
         (measures (om::inside self)))
     (let ((*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
+          (*mscx-export-measure-plan*
+            (or *mscx-export-measure-plan*
+                (mscx-build-export-measure-plan (list self))))
           (*mscx-tempo-map* (build-voice-tempo-map self measures))
 	  (*mscx-export-velocities-as-dynamics* velocities-as-dynamics)
 	  (*mscx-current-velocity* :unset)
@@ -1726,18 +1867,24 @@ Otherwise use the initial tempo value."
 	  )
       (list
        (format nil "<Staff id=\"~D\">" voicenum)
-       (loop for mes in measures
-             for i = 1 then (+ i 1)
-             for measure-index = 0 then (+ measure-index 1)
+       (loop for measure-index below (length *mscx-export-measure-plan*)
+             for mes = (nth measure-index measures)
+             for i = (1+ measure-index)
              collect
              (let ((*mscx-current-measure-index* measure-index)
                    (*mscx-current-offset* 0))
-               (cons-mscx-expr mes :free i :clef clef :notation-scale notation-scale :part part)))
+               (if mes
+                   (cons-mscx-expr mes :free i :clef clef :notation-scale notation-scale :part part)
+                 (mscx-empty-export-measure i clef))))
        "</Staff>"))))
 
 
 (defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part)
-  (let ((voices (om::inside self)))
+  (let* ((voices (om::inside self))
+         (*mscx-export-measure-plan* (mscx-build-export-measure-plan voices)))
+    (unless (or (= (length clef) 1) (= (length clef) (length voices)))
+      (error "MSCX export: supply one clef for all voices, or one per voice (~D); got ~D."
+             (length voices) (length clef)))
     (list
      "<museScore version=\"4.60\">"
      "<Score>"
