@@ -17,6 +17,7 @@
 ;;; Depends on OM and the current import-mxml rhythm helpers:
 ;;;   om::make-tree-builder, om::new-tuplet, om::pop-tuplet,
 ;;;   om::add-new-pulse, om::get-tree
+;;; Load mscx-expression.lisp first for the shared expression protocol.
 ;;;
 
 
@@ -1274,6 +1275,180 @@ This is a debug/validation structure, not an OM tree."
           (cdr (reverse tempo-events)))))
 
 
+;;; ------------------------------------------------------------
+;;; Bounded expression preservation (independent of rhythm decoding)
+;;; ------------------------------------------------------------
+
+(defparameter *mscx-import-staff-expression-tags*
+  '(:|StaffText| :|SystemText| :|PlayTechAnnotation| :|SoundFlag|
+    :|Articulation| :|Fermata| :|Ornament| :|TremoloSingleChord|))
+
+(defparameter *mscx-import-local-expression-tags*
+  '(:|Articulation| :|Fermata| :|Ornament| :|Arpeggio| :|TremoloSingleChord|
+    :|StaffText| :|PlayTechAnnotation| :|SoundFlag| :|Symbol| :|Fingering|
+    :|StringNumber| :|Text| :|ChordLine| :|FretCircle| :|head| :|headType| :|headScheme|
+    :|dotPosition| :|ghost| :|dead| :|small| :|Lyrics|))
+
+(defun mscx-import-expression-tag-p (node tags)
+  (some (lambda (tag) (mscx-tag-equal node tag)) tags))
+
+(defun mscx-import-expression-number (node tag &optional (default 0))
+  "Read an expression location number without enabling reader evaluation."
+  (let ((text (mscx-child-text node tag nil)))
+    (if text
+        (let* ((*read-eval* nil)
+               (value (read-from-string text)))
+          (unless (rationalp value)
+            (error "MSCX expression location is not rational: ~S" text))
+          value)
+        default)))
+
+(defun mscx-staff-expression-records (staff-node division)
+  "Collect raw expressions from the first MSCX voice with exact anchors.
+Rests advance this independent cursor positively. LOCATION applies only to
+this preservation pass; the existing rhythm/tempo importer is unchanged.
+Offsets are whole-note fractions. Nested text markup and attributes remain
+inside RAW-NODE. Spanners are deliberately outside this bounded import."
+  (let ((records nil)
+        (state (make-mscx-import-state :division division)))
+    (labels ((record (node placement measure offset order event-index
+                          &optional note-index note-pitch pitch-occurrence pitches rest-p)
+               (let* ((description (expression-node-description node placement))
+                      (anchor (list :measure measure :offset offset :order order
+                                    :event-index event-index)))
+                 (when (member placement '(:chord :note))
+                   (setf (getf anchor :pitches) pitches
+                         (getf anchor :rest-p) rest-p))
+                 (when note-index
+                   (setf (getf anchor :note-index) note-index
+                         (getf anchor :note-pitch) note-pitch
+                         (getf anchor :pitch-occurrence) pitch-occurrence))
+                 (setf (getf description :anchor) anchor)
+                 (push description records))))
+      (loop for measure-node in (mscx-measure-nodes staff-node)
+            for measure from 0 do
+              (setf (mscx-import-state-measure-index state) measure)
+              (let ((tokens (mscx-measure-rhythm-tokens measure-node state))
+                    (anchor-measure measure)
+                    (offset 0)
+                    (event-index 0))
+                (loop for item in (mscx-voice-children measure-node)
+                      for order from 0 do
+                        (cond
+                          ((mscx-tag-equal item :|location|)
+                           (incf anchor-measure
+                                 (mscx-import-expression-number item :|measures|))
+                           (incf offset
+                                 (mscx-import-expression-number item :|fractions|)))
+                          ((mscx-import-expression-tag-p item *mscx-import-staff-expression-tags*)
+                           (record item :staff anchor-measure offset order event-index))
+                          ((mscx-note-event-p item)
+                           (let* ((token (find order tokens :key #'mscx-rhythm-token-index))
+                                  (notes (mscx-children-named item :|Note|))
+                                  (pitches (remove nil (mapcar #'mscx-note-midic notes)))
+                                  (rest-p (mscx-rest-p item)))
+                             (loop for child in (mscx-children item) do
+                               (when (mscx-import-expression-tag-p
+                                      child *mscx-import-local-expression-tags*)
+                                 (record child :chord anchor-measure offset order event-index
+                                         nil nil nil pitches rest-p)))
+                             (loop for note in notes for note-index from 0
+                                   for pitch = (mscx-note-midic note)
+                                   for occurrence = (count pitch
+                                                           (mapcar #'mscx-note-midic
+                                                                   (subseq notes 0 note-index))) do
+                                     (loop for child in (mscx-children note) do
+                                       (when (mscx-import-expression-tag-p
+                                              child *mscx-import-local-expression-tags*)
+                                         (record child :note anchor-measure offset order event-index
+                                                 note-index pitch occurrence pitches nil))))
+                             (when token
+                               (incf offset (/ (abs (mscx-rhythm-token-actual-pulse token))
+                                               (* 4 division))))
+                             (incf event-index))))))))
+    (nreverse records)))
+
+(defun mscx-expression-import-targets (voice)
+  "Return reconstructed (object/path/anchor) leaves, including OM rests.
+Walk the actual INSIDE hierarchy after VOICE construction: OM may rebuild
+the chord objects supplied as constructor arguments. Units match the
+exporter's EXTENT/QVALUE proportions, with one quarter equal to 1/4."
+  (let ((targets nil))
+    (labels ((weight (object) (/ (om::extent object) (om::qvalue object)))
+             (children (object path offset scale measure event-counter)
+               (loop with cursor = offset
+                     for child in (om::inside object) for index from 0
+                     for duration = (* scale (weight child)) do
+                       (walk child (append path (list index)) cursor duration
+                             measure event-counter)
+                       (incf cursor duration)))
+             (walk (object path offset duration measure event-counter)
+               (cond
+                 ((or (typep object 'om::rest) (typep object 'om::chord))
+                  (push (list :object object :path path :measure measure
+                              :offset offset :event-index (car event-counter)
+                              :rest-p (typep object 'om::rest)
+                              :pitches (unless (typep object 'om::rest)
+                                         (om::lmidic object)))
+                        targets)
+                  (incf (car event-counter)))
+                 ((om::container-p object)
+                  (children object path offset
+                            (if (zerop duration) 0 (/ duration (weight object)))
+                            measure event-counter)))))
+      (loop for measure in (om::inside voice) for index from 0 do
+        (children measure (list index) 0 1/4 index (list 0))))
+    (nreverse targets)))
+
+(defun mscx-expression-import-target-matches-p (target anchor)
+  (and (= (getf target :measure) (getf anchor :measure))
+       (= (getf target :offset) (getf anchor :offset))
+       (eq (not (null (getf target :rest-p)))
+           (not (null (getf anchor :rest-p))))
+       (equalp (sort (copy-list (getf target :pitches)) #'<)
+               (sort (copy-list (getf anchor :pitches)) #'<))))
+
+(defun mscx-expression-import-target (targets anchor)
+  "Prefer the source event index, otherwise accept a unique exact match."
+  (let* ((matches (remove-if-not
+                   (lambda (target) (mscx-expression-import-target-matches-p target anchor))
+                   targets))
+         (indexed (find (getf anchor :event-index) matches
+                        :key (lambda (target) (getf target :event-index)))))
+    (or indexed (and (= (length matches) 1) (car matches)))))
+
+(defun mscx-expression-import-note-path (target anchor)
+  "Match note pitch and its occurrence, preserving heads on repeated pitches."
+  (let ((occurrence (getf anchor :pitch-occurrence 0))
+        (pitch (getf anchor :note-pitch)))
+    (loop for note in (om::inside (getf target :object)) for index from 0
+          when (equalp (om::midic note) pitch) do
+            (if (zerop occurrence)
+                (return (append (getf target :path) (list index)))
+                (decf occurrence)))))
+
+(defun mscx-attach-imported-expressions (voice staff-node division)
+  "Attach after OM reconstruction. Staff expressions remain voice-owned.
+Unmatched local data remain persisted on VOICE with their original anchor,
+instead of silently assigning them to another note."
+  (let* ((records (mscx-staff-expression-records staff-node division))
+         (targets (when records (mscx-expression-import-targets voice))))
+    (dolist (description records)
+      (let* ((extra (apply #'om::make-mscx-expression-extra description))
+             (placement (getf description :placement))
+             (anchor (getf description :anchor))
+             (target (unless (eq placement :staff)
+                       (mscx-expression-import-target targets anchor)))
+             (path (when target
+                     (if (eq placement :note)
+                         (mscx-expression-import-note-path target anchor)
+                         (getf target :path)))))
+        (when (and (not (eq placement :staff)) (null path))
+          (warn "MSCX expression retained on voice: no unambiguous ~A target for ~S."
+                placement anchor))
+        (om::add-extra voice extra path))))
+  voice)
+
 (defun staff-from-mscx (staff-node state &key name)
   "Decode one MSCX Staff into one OM voice."
   (let ((measure-data-list nil))
@@ -1297,6 +1472,8 @@ This is a debug/validation structure, not an OM tree."
       ;; ellers må det gjøres etter at objektet er plassert i OM.
       (when (and clef (om::associated-box voice))
 	(om::set-edit-param (om::associated-box voice) 'om::staff clef))
+      (mscx-attach-imported-expressions voice staff-node
+                                        (mscx-import-state-division state))
       voice)))
 
 

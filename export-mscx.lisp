@@ -4,22 +4,12 @@
 ;;;
 ;;; Anders Vinjar - 2026
 ;;; 
-;;; Time-stamp: <2026-05-13 11:15:14 andersvi>
-;;; 2026-10-05: export-local measure alignment/padding; counted MSCX dots.
-;;; Existing OM objects are read only; padding is emitted directly as XML.
-;;; Interior bar-length conflicts require re-barring and raise a clear error.
-;;
-
-
+;;; Time-stamp: <2026-10-08 12:56:45 andersvi>
+;;; 
 ;;
 ;; requires some existing code in OMs 'import-export/export-mxml.lisp'
-;;
+;; 
 
-(defpackage "MSCX" 
-  (:use "COMMON-LISP")
-  (:use "MusicXML")
-  (:use :om)
-  (:nicknames :mscx))
 
 (in-package :mscx)
 
@@ -529,473 +519,7 @@ FREE is the written duration used for durationType."
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; EXTRAS
-;;;
-
-
-;; TEXT extras
-
-;; ("f" "R" "^" "d" "n" "S" "Q" "P" "_" "`" "a" "b" "c" "d" "e" "f" "g" "h" "i")
-
-;; ((1 "f") (2 "R") (3 "^") (4 "d")
-;; (5 "n") (6 "S") (7 "Q") (8 "P")
-;; (9 "_") (10 "`") (11 "a") (12 "b")
-;; (13 "c") (14 "d") (15 "e") (16 "f")
-;; (17 "g") (18 "h") (19 "i"))
-
-(defparameter *om-head-text=>mscx-head-text*
-  '(("f" . "triangle-up")
-    ("R" . "altbrevis") 				    ; + head-type brevis
-    ("^" . "triangle-down")				    ; + head-type semibreve
-    ("d" . "diamond")
-    ("n" . "do")
-    ("S" . "breve + double || bars")			    ; + note-head brevis
-    ("Q" . "breve")					    ; + note-head brevis
-    ("P" . "altbrevis")					    ; + note-head semi-brevis
-    ("_" . "triangle-down")
-    ("`" . "heavy-cross")
-    ("a" . "diamond")
-    ("b" . "la")					    ;(square) + note-head semi-brevis
-    ("c" . "large-diamond")				    ;+note-head semi-brevis
-    ("d" . "large-diamond")
-    ("e" . "la")					    ;(square)
-    ("f" . "fa")
-    ("g" . "mi")
-    ("h" . "xcircle")
-    ("i" . "sol")
-    ))
-
-(defun get-extra-by-kind (self kind)
-  (car (om::get-extras self kind)))
-
-(defun head-extra-for-note (note)
-  (get-extra-by-kind note "head"))
-
-(defun head-extra->mscx-head (extra)
-  (and extra
-       (cdr (assoc (om::thehead extra)
-                   *om-head-text=>mscx-head-text*
-                   :test #'equal))))
-
-(defun note-head-as-mscx (note)
-  (let ((head (head-extra->mscx-head (head-extra-for-note note))))
-    (when head
-      (list (format nil "<head>~A</head>" head)))))
-
-
-;;;
-;;; manual lookup of various 'staff-text-w-playback-mods' in mscore
-;;;
-;;; available ":kind"s - treated w. different tags and structure:
-;;; 
-;;;	:sound-flag
-;;;	:staff-text
-;;;	:play-tech
-;;;
-;;; see #'text-extra-as-mscx below for use
-
-(defparameter *om-text-extra-rules* 
-  ;; for smart playback w some musesounds
-  ;; 
-  ;; manually looking up mappings to various <playingTechnique>  in .mscx files
-
-  '(("pizz"      :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-    ("pizz."     :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-    ("pizzicato" :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-
-    ("arco"      :kind :sound-flag :playing-technique "ordinary_technique" :text "arco")
-    ("ord"       :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
-    ("ordinary"  :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
-
-    ("col legno" :kind :sound-flag :playing-technique "Col Legno" :text "col legno")
-    ("sul pont"  :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul pont." :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul ponticello" :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul tasto" :kind :sound-flag :playing-technique "Sul Tasto" :text "sul tasto"))
-  )
-
-(defun staff-text-sound-flag-as-mscx (text playing-technique)
-  (list "<StaffText>"
-        (format nil "<text>~A</text>" text)
-        "<SoundFlag>"
-        (format nil "<playingTechnique>~A</playingTechnique>" playing-technique)
-        "</SoundFlag>"
-        "</StaffText>"))
-
-(defun normalize-extra-text (s)
-  (string-downcase (string-trim '(#\Space #\Tab #\Newline) (or s ""))))
-
-(defun text-extra-for-chord (chord)
-  (get-extra-by-kind chord "text"))
-
-(defun text-extra-text (extra)
-  (and extra (om::thetext extra)))
-
-(defun text-extra-rule (extra)
-  (let* ((text (text-extra-text extra))
-         (key (and text (normalize-extra-text text))))
-    (and key
-         (assoc key *om-text-extra-rules* :test #'string=))))
-
-(defun rule-prop (rule key)
-  (getf (cdr rule) key))
-
-(defun play-tech-annotation-as-mscx (text &optional play-tech-type)
-  (append
-   (list "<PlayTechAnnotation>")
-   (when play-tech-type
-     (list (format nil "<playTechType>~A</playTechType>" play-tech-type)))
-   (list (format nil "<text>~A</text>" text)
-         "</PlayTechAnnotation>")))
-
-(defun staff-text-as-mscx (text)
-  (list "<StaffText>"
-        (format nil "<text>~A</text>" text)
-        "</StaffText>"))
-
-(defun text-extra-as-mscx (chord)
-  (let* ((extra (text-extra-for-chord chord))
-         (raw-text (text-extra-text extra))
-         (rule (and extra (text-extra-rule extra))))
-    (cond
-      ((null extra) nil)
-      (rule
-       (case (rule-prop rule :kind)
-         (:sound-flag
-	  (staff-text-sound-flag-as-mscx
-	   (or (rule-prop rule :text) raw-text)
-	   (rule-prop rule :playing-technique)))
-	 (:play-tech
-          (play-tech-annotation-as-mscx (or (rule-prop rule :text) raw-text)
-                                        (rule-prop rule :play-tech-type)))
-         (:staff-text
-          (staff-text-as-mscx (or (rule-prop rule :text) raw-text)))
-         (otherwise
-          (staff-text-as-mscx raw-text))))
-      (raw-text
-       (staff-text-as-mscx raw-text))
-      (t nil))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; DYNAMICS
-;; 
-;; velocity, and vel-extras set per note in OMs editors
-;;
-;;
-;; uses OMs various vel lookups etc in editor/scoreeditor/scoretools.lisp
-;; 
-;; trying to support OMs - per-note dynamics (vel-extra)
-;; 
-(defparameter *mscx-dynamics-size* "0.6")
-(defparameter *mscx-dynamics-direction* "up")
-
-;; mapping used by mscore
-
-(defparameter *mscx-dynamic-velocities*
-  '((:ppp 16)
-    (:pp  33)
-    (:p   49)
-    (:mp  64)
-    (:mf  80)
-    (:f   96)
-    (:ff  112)
-    (:fff 126)))
-
-;; 
-;; OMs mapping is in om::*dynamics-symbols-list*,set in scoretools.lisp
-;; 
-;; (mapcar #'(lambda (d) (list (first d) (third d))) om::*dynamics-symbols-list*)
-;; 
-;; ((:ppp 20)
-;;  (:pp 40)
-;;  (:p 55)
-;;  (:mp 60)
-;;  (:mf 85)
-;;  (:f 100)
-;;  (:ff 115)
-;;  (:fff 127))
-
-
-(defvar *mscx-current-velocity* :unset)
-(defvar *mscx-current-dynamic-symbol* :unset)
-
-;; 
-;; :velocities-as-dynamics nil ; default, bare vel-extra gir <Dynamic>
-;; :velocities-as-dynamics t   ; velocity-endringer gir ekstra <Dynamic>tegn
-;; 
-(defparameter *mscx-export-velocities-as-dynamics* t)
-
-;; usage 1: workaround: mscore playbacks only reacts to _symbolic_ dynamic signs, not its velocity-value
-;; 
-;; usage 2: debug dynamic
-
-
-(defun vel-extra-for-chord (chord)
-  (get-extra-by-kind chord "vel"))
-
-(defun chord-dynamic-symbol (chord)
-  "Use OM's own velocity->dynamic mapping."
-  (when (vel-extra-for-chord chord)
-    (let ((dyn (om::get-dyn-from-vel (om::get-object-vel chord))))
-      (when (symbolp dyn)
-        dyn))))
-
-(defun dynamic-symbol->mscx-subtype (dyn)
-  (string-downcase (symbol-name dyn)))
-
-(defun dynamic-symbol->mscx-velocity (dyn)
-  (or (cadr (assoc dyn *mscx-dynamic-velocities* :test #'equal))
-      80))
-
-
-(defun mscx-velocity->dynamic-symbol (vel)
-  "Return nearest dynamic symbol for VEL using *mscx-dynamic-velocities*."
-  (car (first
-        (sort (copy-list *mscx-dynamic-velocities*)
-              #'<
-              :key (lambda (entry)
-                     (abs (- vel (second entry))))))))
-
-(defun mscx-velocity-dynamic-as-needed (vel)
-  "Optionally emit <Dynamic> when velocity maps to a new dynamic symbol."
-  (when *mscx-export-velocities-as-dynamics*
-    (let ((dyn (mscx-velocity->dynamic-symbol vel)))
-      (when (or (eq *mscx-current-dynamic-symbol* :unset)
-                (not (equal dyn *mscx-current-dynamic-symbol*)))
-        (setf *mscx-current-dynamic-symbol* dyn)
-        (dynamic-as-mscx dyn)))))
-
-
-
-
-(defun dynamic-as-mscx (dyn)
-  (list "<Dynamic>"
-        (format nil "<subtype>~A</subtype>"
-                (dynamic-symbol->mscx-subtype dyn))
-        (format nil "<velocity>~D</velocity>"
-                (dynamic-symbol->mscx-velocity dyn))
-        (format nil "<dynamicsSize>~A</dynamicsSize>"
-                *mscx-dynamics-size*)
-        (format nil "<direction>~A</direction>"
-                *mscx-dynamics-direction*)
-        "</Dynamic>"))
-
-(defun vel-extra-as-mscx (chord)
-  (let ((dyn (chord-dynamic-symbol chord)))
-    (when dyn
-      (dynamic-as-mscx dyn))))
-
-;;
-;; CHAR-EXTRAS -> MSCX articulations / fermatas
-;;
-
-;; a list of some of the articulations from mscore, as named in .mscx files
-;; manually grabbed from various mscx-files
-;;
-;; for those actually used in OMs char-extras, check mapping
-;; 
-
-(defparameter *mscx-articulation-symbol-pool*
-  '(
-    ;; ------------------------------------------------------------
-    ;; BOWING / STRINGS / PLUCKED
-    ;; ------------------------------------------------------------
-    (nil :tag "Articulation" :subtype "stringsUpBow" :group :bowing)
-    (nil :tag "Articulation" :subtype "stringsDownBow" :group :bowing)
-    (nil :tag "Articulation" :subtype "stringsHarmonic" :group :strings)
-    (nil :tag "Articulation" :subtype "stringsThumbPosition" :group :strings)
-    (nil :tag "Articulation" :subtype "pluckedSnapPizzicatoAbove" :group :plucked)
-
-    ;; ------------------------------------------------------------
-    ;; STANDARD ARTICULATIONS
-    ;; ------------------------------------------------------------
-    (nil :tag "Articulation" :subtype "articAccentBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articSoftAccentBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articMarcatoAbove" :group :articulation)
-    (nil :tag "Articulation" :subtype "articStressBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articUnstressBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articTenutoBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articStaccatoBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articStaccatissimoBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articStaccatissimoStrokeBelow" :group :articulation)
-    (nil :tag "Articulation" :subtype "articStaccatissimoWedgeBelow" :group :articulation)
-
-    ;; ------------------------------------------------------------
-    ;; COMBINED ARTICULATIONS
-    ;; ------------------------------------------------------------
-    (nil :tag "Articulation" :subtype "articTenutoStaccatoBelow" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articAccentStaccatoBelow" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articMarcatoStaccatoAbove" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articMarcatoTenutoAbove" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articTenutoAccentBelow" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articSoftAccentStaccatoBelow" :group :articulation-combo)
-    (nil :tag "Articulation" :subtype "articSoftAccentTenutoBelow" :group :articulation-combo)
-
-    ;; ------------------------------------------------------------
-    ;; FERMATAS
-    ;; ------------------------------------------------------------
-    (nil :tag "Fermata" :subtype "fermataAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataShortAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataVeryShortAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataLongAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataVeryLongAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataShortHenzeAbove" :group :fermata)
-    (nil :tag "Fermata" :subtype "fermataLongHenzeAbove" :group :fermata)
-
-    ;; ------------------------------------------------------------
-    ;; ORNAMENTS
-    ;; ------------------------------------------------------------
-    (nil :tag "Ornament" :subtype "ornamentTrill" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentShortTrill" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTurn" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTurnInverted" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTurnSlash" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTurnUp" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTurnUpS" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentMordent" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentUpMordent" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentDownMordent" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPrallUp" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPrallDown" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPrallMordent" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentLinePrall" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPinceCouperin" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentHaydn" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTremblement" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentTremblementCouperin" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentShake3" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentShakeMuffat1" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPrecompMordentUpperPrefix" :group :ornament)
-    (nil :tag "Ornament" :subtype "ornamentPrecompSlide" :group :ornament)
-    (nil :tag "Ornament" :subtype "brassMuteClosed" :group :ornament)
-
-    ;; ------------------------------------------------------------
-    ;; TRILLS
-    ;; ------------------------------------------------------------
-    (nil :tag "Trill" :subtype "trill" :group :trill)
-    (nil :tag "Trill" :subtype "upprall" :group :trill)
-    (nil :tag "Trill" :subtype "downprall" :group :trill)
-    (nil :tag "Trill" :subtype "prallprall" :group :trill)
-
-    ;; ------------------------------------------------------------
-    ;; TREMOLO
-    ;; ------------------------------------------------------------
-    (nil :tag "TremoloSingleChord" :subtype "r8" :group :tremolo-single)
-    (nil :tag "TremoloSingleChord" :subtype "r16" :group :tremolo-single)
-    (nil :tag "TremoloSingleChord" :subtype "r32" :group :tremolo-single)
-    (nil :tag "TremoloSingleChord" :subtype "r64" :group :tremolo-single)
-    (nil :tag "TremoloSingleChord" :subtype "buzzroll" :group :tremolo-single)
-
-    (nil :tag "TremoloTwoChord" :subtype "c8" :group :tremolo-two)
-    (nil :tag "TremoloTwoChord" :subtype "c16" :group :tremolo-two)
-    (nil :tag "TremoloTwoChord" :subtype "c32" :group :tremolo-two)
-    (nil :tag "TremoloTwoChord" :subtype "c64" :group :tremolo-two)
-
-    ;; ------------------------------------------------------------
-    ;; ARPEGGIO / CHORD LINE
-    ;; ------------------------------------------------------------
-    (nil :tag "Arpeggio" :subtype "0" :group :arpeggio)
-    (nil :tag "Arpeggio" :subtype "1" :group :arpeggio)
-    (nil :tag "Arpeggio" :subtype "2" :group :arpeggio)
-    (nil :tag "Arpeggio" :subtype "3" :group :arpeggio)
-    (nil :tag "Arpeggio" :subtype "4" :group :arpeggio)
-    (nil :tag "Arpeggio" :subtype "5" :group :arpeggio)
-
-    (nil :tag "ChordLine" :subtype "1" :group :chord-line)
-    (nil :tag "ChordLine" :subtype "2" :group :chord-line)
-    (nil :tag "ChordLine" :subtype "3" :group :chord-line)
-    (nil :tag "ChordLine" :subtype "4" :group :chord-line)
-
-    ;; ------------------------------------------------------------
-    ;; OTHER SPECIALS
-    ;; ------------------------------------------------------------
-    (nil :tag "Articulation" :subtype "brassMuteClosed" :group :brass)
-    (nil :tag "Articulation" :subtype "brassMuteOpen" :group :brass)
-
-    (nil :tag "Articulation" :subtype "guitarFadeIn" :group :guitar)
-    (nil :tag "Articulation" :subtype "guitarFadeOut" :group :guitar)
-
-    (nil :tag "Articulation" :subtype "luteFingeringRHThumb" :group :lute)
-    (nil :tag "Articulation" :subtype "luteFingeringRHFirst" :group :lute)
-    (nil :tag "Articulation" :subtype "luteFingeringRHSecond" :group :lute)
-    (nil :tag "Articulation" :subtype "luteFingeringRHThird" :group :lute)
-
-    (nil :tag "Articulation" :subtype "pictHalfOpen2" :group :winds)
-
-    (nil :tag "Articulation" :subtype "tremoloDivisiDots2" :group :tremolo-divisi)
-    (nil :tag "Articulation" :subtype "tremoloDivisiDots3" :group :tremolo-divisi)
-    (nil :tag "Articulation" :subtype "tremoloDivisiDots4" :group :tremolo-divisi)
-    (nil :tag "Articulation" :subtype "tremoloDivisiDots6" :group :tremolo-divisi)
-
-    (nil :tag "Articulation" :subtype "wiggleSawtooth" :group :wiggle)
-    (nil :tag "Articulation" :subtype "wiggleSawtoothWide" :group :wiggle)
-    (nil :tag "Articulation" :subtype "wiggleVibratoLargeFaster" :group :wiggle)
-    (nil :tag "Articulation" :subtype "wiggleVibratoLargeSlowest" :group :wiggle)))
-
-
-
-;; Mapping from OMs 'char extras - using #'thechar
-
-(defparameter *om-char-extra->mscx*
-  ;; NOTE:
-  ;; OM-char values below are placeholders / first guesses.
-
-  '(
-    ("s" :group :bowing       :tag "Articulation" :subtype "stringsDownBow")
-    ("r" :group :bowing	      :tag "Articulation" :subtype "stringsUpBow")
-    ("t" :group :articulation :tag "Articulation" :subtype "articStaccatissimoBelow")
-    ("u" :group :articulation :tag "Articulation" :subtype "articTenutoStaccatoBelow")
-    ("v" :group :articulation :tag "Articulation" :subtype "articTenutoStaccatoBelow")
-    ("w" :group :articulation :tag "Articulation" :subtype "articMarcatoAbove")
-    ("{" :group :articulation :tag "Articulation" :subtype "articMarcatoAbove")
-    ("x" :group :articulation :tag "Articulation" :subtype "articTenutoBelow")
-    ("y" :group :articulation :tag "Articulation" :subtype "articAccentStaccatoAbove")
-    ("z" :group :articulation :tag "Articulation" :subtype "articAccentStaccatoBelow")
-    ("|" :group :fermata      :tag "Fermata"      :subtype "fermataAbove")
-    ("}" :group :fermata      :tag "Fermata"      :subtype "fermataAbove")
-    ))
-
-(defun char-extra-p (x)
-  (typep x 'om::char-extra))
-
-(defun chord-char-extras (chord)
-  (remove-if-not #'char-extra-p
-                 (om::get-extras chord "all")))
-
-(defun char-extra-char (extra)
-  "Return the raw OM char code used to look up the glyph. "
-  (and extra (om::thechar extra)))
-
-(defun find-char-extra-mscx-mapping (char)
-  (and char
-       (assoc char *om-char-extra->mscx* :test #'string=)))
-
-(defun char-extra-mscx-tag (mapping)
-  (getf (cdr mapping) :tag))
-
-(defun char-extra-mscx-subtype (mapping)
-  (getf (cdr mapping) :subtype))
-
-(defun mscx-tag+subtype->xml (tag subtype)
-  (list (format nil "<~A>" tag)
-        (format nil "<subtype>~A</subtype>" subtype)
-        (format nil "</~A>" tag)))
-
-(defun char-extra->mscx (extra)
-  (let* ((char (char-extra-char extra))
-         (mapping (find-char-extra-mscx-mapping char)))
-    (when mapping
-      (mscx-tag+subtype->xml
-       (char-extra-mscx-tag mapping)
-       (char-extra-mscx-subtype mapping)))))
-
-(defun char-extras-as-mscx (chord)
-  (loop for extra in (chord-char-extras chord)
-        append (or (char-extra->mscx extra) nil)))
-
+;;; Expression helpers are defined in mscx-expression.lisp.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1123,151 +647,7 @@ FREE is the written duration used for durationType."
               "</Spanner>")))
       (otherwise nil))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; SLURS
-;;
-
-(defun slur-extra-p (x)
-  (typep x 'om::slur))
-
-(defun chord-slur-extras (chord)
-  (remove-if-not #'slur-extra-p
-                 (om::get-extras chord "all")))
-
-(defun chord-slur-names (chord)
-  (remove nil
-          (remove-duplicates
-           (mapcar #'om::slurname (chord-slur-extras chord))
-           :test #'equal)))
-
-(defun chord-has-slur-name-p (chord slurname)
-  (find slurname (chord-slur-names chord) :test #'equal))
-
-(defun find-next-chord-with-slur-name (chord slurname)
-  (loop for c = (next-chord chord) then (and c (next-chord c))
-        while c
-        when (chord-has-slur-name-p c slurname)
-          do (return c)))
-
-(defun find-prev-chord-with-slur-name (chord slurname)
-  (loop for c = (prev-chord chord) then (and c (prev-chord c))
-        while c
-        when (chord-has-slur-name-p c slurname)
-          do (return c)))
-
-(defun chord-offset-in-measure (chord)
-  "Offset from start of measure to CHORD, in whole-note fractions.
-Computed only from preceding chords in the same measure."
-  (loop with sum = 0
-        for c = (prev-chord chord) then (prev-chord c)
-        while (and c (same-measure-p c chord))
-        do (incf sum (obj-actual-dur c))
-        finally (return sum)))
-
-(defun chord-distance-forward (from to)
-  "Distance in actual time from FROM to TO, excluding TO."
-  (loop with sum = 0
-        for c = from then (next-chord c)
-        while c
-        do (when (eq c to)
-             (return sum))
-           (incf sum (obj-actual-dur c))))
-
-(defun measure-distance-forward (from-measure to-measure)
-  "Count measures forward from FROM-MEASURE to TO-MEASURE."
-  (loop with count = 0
-        for m = from-measure then (om::next-container m '(om::measure))
-        while m
-        do (when (eq m to-measure)
-             (return count))
-           (incf count)))
-
-(defun mscx-forward-location-between-chords (from to)
-  (let* ((from-measure (mxml::get-parent-measure from))
-         (to-measure (mxml::get-parent-measure to)))
-    (cond
-      ((eq from-measure to-measure)
-       (list "<location>"
-             (format nil "<fractions>~A</fractions>"
-                     (ratio->mscx-fraction-string
-                      (chord-distance-forward from to)))
-             "</location>"))
-
-      (t
-       (let* ((measure-diff (measure-distance-forward from-measure to-measure))
-              (to-offset (chord-offset-in-measure to)))
-         (append
-          (list "<location>"
-                (format nil "<measures>~D</measures>" measure-diff))
-          (when (not (zerop to-offset))
-            (list (format nil "<fractions>~A</fractions>"
-                          (ratio->mscx-fraction-string to-offset))))
-          (list "</location>")))))))
-
-(defun mscx-backward-location-between-chords (from to)
-  "Location from FROM back to TO, encoded as negative measure/fraction offsets."
-  (let* ((from-measure (mxml::get-parent-measure from))
-         (to-measure (mxml::get-parent-measure to)))
-    (cond
-      ((eq from-measure to-measure)
-       (list "<location>"
-             (format nil "<fractions>-~A</fractions>"
-                     (ratio->mscx-fraction-string
-                      (chord-distance-forward to from)))
-             "</location>"))
-
-      (t
-       (let* ((measure-diff (measure-distance-forward to-measure from-measure))
-              (from-offset (chord-offset-in-measure from)))
-         (append
-          (list "<location>"
-                (format nil "<measures>-~D</measures>" measure-diff))
-          (when (not (zerop from-offset))
-            (list (format nil "<fractions>-~A</fractions>"
-                          (ratio->mscx-fraction-string from-offset))))
-          (list "</location>")))))))
-
-(defun mscx-slur-spanner-for-name (chord slurname)
-  (let ((prev (find-prev-chord-with-slur-name chord slurname))
-        (next (find-next-chord-with-slur-name chord slurname)))
-    (cond
-      ((and (null prev) next)
-       (list "<Spanner type=\"Slur\">"
-             "<Slur/>"
-             "<next>"
-             (mscx-forward-location-between-chords chord next)
-             "</next>"
-             "</Spanner>"))
-
-      ((and prev (null next))
-       (list "<Spanner type=\"Slur\">"
-             "<prev>"
-             (mscx-backward-location-between-chords chord prev)
-             "</prev>"
-             "</Spanner>"))
-
-      ((and prev next)
-       (append
-        (list "<Spanner type=\"Slur\">"
-              "<prev>"
-              (mscx-backward-location-between-chords chord prev)
-              "</prev>"
-              "</Spanner>")
-        (list "<Spanner type=\"Slur\">"
-              "<Slur/>"
-              "<next>"
-              (mscx-forward-location-between-chords chord next)
-              "</next>"
-              "</Spanner>")))
-
-      (t nil))))
-
-(defun mscx-slur-spanners (chord)
-  (loop for name in (chord-slur-names chord)
-        append (mscx-slur-spanner-for-name chord name)))
-
-
+;;; Slur helpers are defined in mscx-expression.lisp.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  
@@ -1363,7 +743,127 @@ Only basic chord/note content is preserved."
      
        (list "</Chord>")))))
 
-(defgeneric cons-mscx-expr (self &key free clef notation-scale part))
+;;; Expression state belongs to one export/voice. It is never retained on
+;;; source objects or in a shared mutable profile.
+(defvar *mscx-expression-context* nil)
+(defvar *mscx-expression-voice* nil)
+(defvar *mscx-expression-pending* nil)
+(defvar *mscx-expression-cursor* 0)
+(defvar *mscx-expression-time-scale* 1)
+(defvar *mscx-expression-note-index* nil)
+
+(defun mscx-per-voice-option (option part count kind)
+  "Accept one selector for all voices, or a list with one selector per voice."
+  (if (and (listp option) option)
+      (progn
+        (unless (= (length option) count)
+          (error "MSCX ~A: expected ~D per-voice selectors, got ~D." kind count (length option)))
+        (nth (1- part) option))
+    option))
+
+(defun mscx-expression-attack-owner (chord)
+  (loop for current = chord then (prev-chord current)
+        while (and current (om::cont-chord-p current))
+        finally (return (or current chord))))
+
+(defun mscx-voice-anchored-expressions (voice)
+  (stable-sort
+   (remove-if-not
+    (lambda (extra)
+      (and (typep extra 'om::mscx-expression-extra)
+           (om::mscx-expression-anchor extra)))
+    ;; GET-EXTRAS "all" recursively includes every descendant in OM8.
+    ;; Only root-owned records belong to this independent anchored stream.
+    (copy-list (om::extra-obj-list voice)))
+   (lambda (a b)
+     (let ((aa (om::mscx-expression-anchor a))
+           (bb (om::mscx-expression-anchor b)))
+       (or (< (getf aa :measure) (getf bb :measure))
+           (and (= (getf aa :measure) (getf bb :measure))
+                (or (< (getf aa :offset) (getf bb :offset))
+                    (and (= (getf aa :offset) (getf bb :offset))
+                         (< (getf aa :order 0) (getf bb :order 0))))))))))
+
+(defun mscx-expression-location (delta)
+  (unless (zerop delta)
+    (list "<location>"
+          (format nil "<fractions>~A</fractions>" (ratio->mscx-fraction-string delta))
+          "</location>")))
+
+(defun mscx-anchored-staff-as-mscx (offset &optional all-in-measure)
+  "Replay imported staff annotations at their exact rational time anchors.
+LOCATION restores the musical cursor after each annotation; it adds no rest."
+  (let ((selected
+          (remove-if-not
+           (lambda (extra)
+             (let ((anchor (om::mscx-expression-anchor extra)))
+               (and (eq (om::mscx-expression-placement extra) :staff)
+                    (= (getf anchor :measure) *mscx-current-measure-index*)
+                    (or all-in-measure (<= (getf anchor :offset) offset)))))
+           *mscx-expression-pending*)))
+    (setf *mscx-expression-pending*
+          (remove-if (lambda (extra) (member extra selected :test #'eq)) *mscx-expression-pending*))
+    (loop for extra in selected
+          for delta = (- (getf (om::mscx-expression-anchor extra) :offset) offset)
+          append (append (mscx-expression-location delta)
+                         (loop for description in (extra-expressions extra *mscx-expression-voice*)
+                               append (expression-as-mscx description :staff *mscx-expression-context*))
+                         (mscx-expression-location (- delta))))))
+
+(defun mscx-orphan-local-as-mscx (owner placement)
+  "Only replay an unmatched imported local mark at its original event/note.
+Any remaining record makes export fail explicitly instead of dropping XML."
+  (let ((selected
+          (remove-if-not
+           (lambda (extra)
+             (let ((anchor (om::mscx-expression-anchor extra)))
+               (and (eq (om::mscx-expression-placement extra) placement)
+                    (= (getf anchor :measure) *mscx-current-measure-index*)
+                    (= (getf anchor :offset) *mscx-expression-cursor*)
+                    (if (eq placement :chord)
+                        (and (eq (not (null (getf anchor :rest-p)))
+                                 (not (null (typep owner 'om::rest))))
+                             (equalp (sort (copy-list (getf anchor :pitches)) #'<)
+                                    (sort (copy-list (unless (typep owner 'om::rest)
+                                                      (om::lmidic owner))) #'<)))
+                      (equalp (getf anchor :note-pitch) (om::midic owner)))
+                    (or (not (eq placement :note))
+                        (= (getf anchor :note-index -1) (or *mscx-expression-note-index* -2))))))
+           *mscx-expression-pending*)))
+    (setf *mscx-expression-pending*
+          (remove-if (lambda (extra) (member extra selected :test #'eq)) *mscx-expression-pending*))
+    (loop for extra in selected
+          append (loop for description in (extra-expressions extra owner)
+                       append (expression-as-mscx description placement *mscx-expression-context*)))))
+
+(defgeneric cons-mscx-expr (self &key free clef notation-scale part &allow-other-keys))
+
+(defmethod cons-mscx-expr :around ((self t) &key free &allow-other-keys)
+  ;; This independent clock is used only by imported expression anchors.
+  ;; The existing written-duration and rhythm serializers remain unchanged.
+  (cond
+    ((typep self 'om::measure)
+     (let ((*mscx-expression-cursor* 0)
+           (*mscx-expression-time-scale* 1))
+       (call-next-method)))
+    ((typep self 'om::group)
+     (let* ((durtot (if (listp free) (car free) free))
+            (num (or (om::get-group-ratio self) (om::extent self)))
+            (denom (om::find-denom num durtot))
+            (actual (if (listp denom) (car denom) num))
+            (normal (if (listp denom) (cadr denom) denom))
+            (*mscx-expression-time-scale*
+              (* *mscx-expression-time-scale*
+                 (if (om::get-group-ratio self) (/ normal actual) 1))))
+       (call-next-method)))
+    ((or (typep self 'om::chord) (typep self 'om::rest))
+     (let ((*mscx-expression-context*
+             (or *mscx-expression-context* (make-expression-context :profile :notation-only))))
+       (prog1 (append (mscx-anchored-staff-as-mscx *mscx-expression-cursor*)
+                      (call-next-method))
+         (incf *mscx-expression-cursor*
+               (* (if (listp free) (car free) free) *mscx-expression-time-scale*)))))
+    (t (call-next-method))))
 
 (defmethod cons-mscx-expr ((self om::chord) &key free clef (notation-scale :from-object) part)
   (let ((*mscx-current-approx*
@@ -1377,12 +877,17 @@ Only basic chord/note content is preserved."
 	   (inside (om::inside self))
 	   (tie-spanner (mscx-tie-spanner self free))
 	   (slur-spanners (mscx-slur-spanners self))
-	   (text-extra (text-extra-as-mscx self))
+	   (continuation-p (om::cont-chord-p self))
+           (attack-owner (mscx-expression-attack-owner self))
+           (text-extra (expression-extras-as-mscx self :staff *mscx-expression-context*
+                                                 :continuation-p continuation-p))
 	   (vel-extra (vel-extra-as-mscx self))
 	   (auto-dynamic (and (null vel-extra)
 			      (mscx-velocity-dynamic-as-needed
 			       (om::get-object-vel self))))
-	   (char-extra (char-extras-as-mscx self))
+	   (char-extra (expression-extras-as-mscx self :chord *mscx-expression-context*
+                                                :continuation-p continuation-p
+                                                :attack-owner attack-owner))
 	   (grace-notes-obj (and (fboundp 'om::gnotes) (om::gnotes self)))
 	   (graces (and grace-notes-obj
 			(ignore-errors (om::glist grace-notes-obj))))
@@ -1413,15 +918,18 @@ Only basic chord/note content is preserved."
 
        ;; char-extras are also chord-level in MSCX
        char-extra
+       (mscx-orphan-local-as-mscx self :chord)
 
        (loop for note in inside
+	     for note-index from 0
 	     append
 	     (let* ((pdata (note-to-mscx-pitch-data note))
 		    (midi (getf pdata :pitch))
 		    (tpc (getf pdata :tpc))
 		    (accidental (getf pdata :accidental))
 		    (vel (om::get-object-vel note))
-		    (head-extra (note-head-as-mscx note)))
+		    (head-extra (expression-extras-as-mscx note :note *mscx-expression-context*
+                                                :continuation-p continuation-p)))
 	       (append
 		(list "<Note>")
 		tie-spanner
@@ -1431,6 +939,8 @@ Only basic chord/note content is preserved."
 			      (mscx-velocity-dynamic-as-needed vel)))
 		(mscx-note-accidental-element accidental)
 		head-extra
+		(let ((*mscx-expression-note-index* note-index))
+                  (mscx-orphan-local-as-mscx note :note))
 		(list "</Note>"))))
      
        (list "</Chord>")))))
@@ -1444,12 +954,15 @@ Only basic chord/note content is preserved."
 	 (beam-mode (mscx-beam-mode self)))
     (append
      (current-tempo-as-mscx)
+     (expression-extras-as-mscx self :staff *mscx-expression-context*)
      (list "<Rest>")
      (when beam-mode
        (list (format nil "<BeamMode>~A</BeamMode>" beam-mode)))
      (mscx-dots-as-xml nbpoints)
      (list (format nil "<durationType>~A</durationType>"
                    (xml-head-to-mscx-duration-type note-head)))
+     (expression-extras-as-mscx self :chord *mscx-expression-context*)
+     (mscx-orphan-local-as-mscx self :chord)
      (list "</Rest>"))))
 
 
@@ -1830,6 +1343,10 @@ No rounding: a remainder below the supported note values raises an error."
 
      (when inside (mscx-padding-rests padding))
 
+     ;; Residual imported annotations include marks inside rests or at the
+     ;; end of a bar. The XML cursor here is at the padded bar's full length.
+     (mscx-anchored-staff-as-mscx (mscx-signature-duration signature) t)
+
      "<BarLine>"
      "<subtype>normal</subtype>"
      "</BarLine>"
@@ -1844,6 +1361,7 @@ No rounding: a remainder below the supported note values raises an error."
           (mscx-measure-header signature (= mesnum 1)
                                (mscx-plan-timesig-p mesnum) clef)
           (mscx-full-measure-rest signature)
+          (mscx-anchored-staff-as-mscx (mscx-signature-duration signature) t)
           "<BarLine>" "<subtype>normal</subtype>" "</BarLine>"
           "</voice>" "</Measure>")))
 
@@ -1852,11 +1370,15 @@ No rounding: a remainder below the supported note values raises an error."
 			     free
 			     (clef '(G 2)) (notation-scale :from-object)
 			     part
+                             (expression-profiles :notation-only) instruments
 			     (velocities-as-dynamics *mscx-export-velocities-as-dynamics*))
 
   (let ((voicenum part)
         (measures (om::inside self)))
-    (let ((*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
+    (let ((*mscx-expression-context* (make-expression-context :profile expression-profiles :instrument instruments))
+          (*mscx-expression-voice* self)
+          (*mscx-expression-pending* (mscx-voice-anchored-expressions self))
+          (*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
           (*mscx-export-measure-plan*
             (or *mscx-export-measure-plan*
                 (mscx-build-export-measure-plan (list self))))
@@ -1865,7 +1387,7 @@ No rounding: a remainder below the supported note values raises an error."
 	  (*mscx-current-velocity* :unset)
 	  (*mscx-current-dynamic-symbol* :unset)
 	  )
-      (list
+      (let ((content (list
        (format nil "<Staff id=\"~D\">" voicenum)
        (loop for measure-index below (length *mscx-export-measure-plan*)
              for mes = (nth measure-index measures)
@@ -1876,10 +1398,14 @@ No rounding: a remainder below the supported note values raises an error."
                (if mes
                    (cons-mscx-expr mes :free i :clef clef :notation-scale notation-scale :part part)
                  (mscx-empty-export-measure i clef))))
-       "</Staff>"))))
+       "</Staff>")))
+        (when *mscx-expression-pending*
+          (error "MSCX export: cannot place ~D preserved expression record(s) in this voice; data remain on the OM object."
+                 (length *mscx-expression-pending*)))
+        content))))
 
 
-(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part)
+(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part (expression-profiles :notation-only) instruments)
   (let* ((voices (om::inside self))
          (*mscx-export-measure-plan* (mscx-build-export-measure-plan voices)))
     (unless (or (= (length clef) 1) (= (length clef) (length voices)))
@@ -1911,13 +1437,17 @@ No rounding: a remainder below the supported note values raises an error."
          (loop for v in voices
                for i = 1 then (+ i 1)
                append
-	       (cons-mscx-expr v :part i :clef (car clef) :notation-scale notation-scale))
+	       (cons-mscx-expr v :part i :clef (car clef)  :notation-scale notation-scale
+                               :expression-profiles (mscx-per-voice-option expression-profiles i (length voices) :profile)
+                               :instruments (mscx-per-voice-option instruments i (length voices) :instrument)))
 	 ;; one clef per voice
 	 (loop for v in voices
                for i = 1 then (+ i 1)
                for k in clef
                append
-	       (cons-mscx-expr v :part i :clef k :notation-scale notation-scale)))
+	       (cons-mscx-expr v :part i :clef k  :notation-scale notation-scale
+                               :expression-profiles (mscx-per-voice-option expression-profiles i (length voices) :profile)
+                               :instruments (mscx-per-voice-option instruments i (length voices) :instrument))))
 
      "</Score>"
      "</museScore>")))
@@ -1968,16 +1498,17 @@ use only the first clef letter."
     (loop for line in (mscx::mscx-header) do (format out "~A~%" line))
     (recursive-write-xml out list -1)))
 
-(defmethod mscx-export ((self t) &key clefs notation-scale path name) nil)
+(defmethod mscx-export ((self t) &key clefs notation-scale path name expression-profiles instruments) nil)
 
-(defmethod mscx-export ((self voice) &key clefs (notation-scale :from-object) path name)
+(defmethod mscx-export ((self voice) &key clefs (notation-scale :from-object) path name (expression-profiles :notation-only) instruments)
   (mscx-export (make-instance 'poly :voices self)
                :clefs clefs
                :notation-scale notation-scale
+               :expression-profiles expression-profiles :instruments instruments
                :path path
                :name name))
 
-(defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name)
+(defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name (expression-profiles :notation-only) instruments)
   (let* ((pathname (or path
                        (om-choose-new-file-dialog
                         :name (or name "om-export.mscx")
@@ -1986,7 +1517,8 @@ use only the first clef letter."
                         :prompt "Export MuseScore MSCX")))
          (content (mscx::cons-mscx-expr self
                                         :clef (or clefs '((G 2)))
-                                        :notation-scale notation-scale)))
+                                        :notation-scale notation-scale
+                                        :expression-profiles expression-profiles :instruments instruments)))
     (when pathname
       (write-mscx-file content pathname)
       pathname)))
@@ -2041,3 +1573,23 @@ Microtonal notation policy:
 
 (defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (notation-scale :from-object) (path nil))
   (call-next-method))
+
+
+(defmethod! export-mscx-expression ((self t)
+                                   &optional (clefs '((G 2)))
+                                   (notation-scale :from-object) (path nil)
+                                   (expression-profiles :notation-only) (instruments nil))
+  :icon 351
+  :indoc '("VOICE or POLY"
+           "one clef for all voices, or one per voice"
+           "notation scale: :from-object or an OM approx value"
+           "target pathname"
+           "profile or one profile per voice: e.g: :notation-only / :muse-strings"
+           "optional instrument identity or one identity per voice")
+  :initvals '(nil ((G 2)) :from-object nil :notation-only nil)
+  :doc "Export MSCX with explicit notation/playback profiles. Profiles select
+expression encoding; select the matching sound library separately in MuseScore.
+This separate box can be loaded into a session containing the older EXPORT-MSCX
+box without changing that generic function's optional-input arity."
+  (mscx-export self :clefs clefs :notation-scale notation-scale :path path
+                    :expression-profiles expression-profiles :instruments instruments))
