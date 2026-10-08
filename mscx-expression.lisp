@@ -8,28 +8,13 @@
 ;;;
 ;;; mscx-expression.lisp:
 ;;;
-;;; OM_MSCORE notation, playback profiles and preserved expression extras.
-;;; Load after OM MusicXML helpers, before export-mscx.lisp / import-mscx.lisp.
+;;; OM_MSCORE generic notation, expression rendering and preserved extras.
+;;; Load after mscx-instrument-mappings.lisp, before export/import.
 ;;; 
 
-(defpackage "MSCX" 
-  (:use "COMMON-LISP")
-  (:use "MusicXML")
-  (:use :om)
-  (:nicknames :mscx)
-  (:export #:extra-expressions #:expression-playback
-           #:expression-profile #:expression-context
-           #:register-expression-profile #:resolve-expression-profile
-           #:make-expression-context #:expression-extras-as-mscx
-           #:expression-as-mscx #:expression-node-description
-           #:mscx-expression-node-as-xml
-           #:expression-profile-name #:expression-profile-library
-           #:expression-profile-techniques #:expression-profile-instruments
-           #:expression-profile-ordinary #:expression-context-profile
-           #:expression-context-instrument #:expression-context-current-technique
-           #:expression-context-current-notation-technique))
-
 (in-package :mscx)
+
+(defvar *mscx-expression-context* nil)
 
 (defun mscx-expression-xml-escape (value)
   "Escape XML character data/attribute values, never element names."
@@ -106,26 +91,6 @@
 ;;;	:play-tech
 ;;;
 ;;; see #'text-extra-as-mscx below for use
-
-(defparameter *om-text-extra-rules* 
-  ;; for smart playback w some musesounds
-  ;; 
-  ;; manually looking up mappings to various <playingTechnique>  in .mscx files
-
-  '(("pizz"      :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-    ("pizz."     :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-    ("pizzicato" :kind :sound-flag :playing-technique "pizzicato" :text "pizzicato")
-
-    ("arco"      :kind :sound-flag :playing-technique "ordinary_technique" :text "arco")
-    ("ord"       :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
-    ("ordinary"  :kind :sound-flag :playing-technique "ordinary_technique" :text "ordinary")
-
-    ("col legno" :kind :sound-flag :playing-technique "Col Legno" :text "col legno")
-    ("sul pont"  :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul pont." :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul ponticello" :kind :sound-flag :playing-technique "Sul Ponticello" :text "sul ponticello")
-    ("sul tasto" :kind :sound-flag :playing-technique "Sul Tasto" :text "sul tasto"))
-  )
 
 (defun staff-text-sound-flag-as-mscx (text playing-technique)
   (list "<StaffText>"
@@ -707,20 +672,8 @@ Measure numbers are zero-based and R is a rational whole-note fraction."
 (in-package :mscx)
 
 ;;; ----------------------------------------------------------------------
-;;; Shared notation vocabulary. Playback IDs live only in profiles below.
+;;; Common notation grammar. Instrument vocabulary lives in its own file.
 ;;; ----------------------------------------------------------------------
-
-(defparameter *mscx-expression-techniques*
-  '((:arco "arco" "arco" "ord" "ord." "ordinary" "ordinary_technique")
-    (:pizz "pizzicato" "pizz" "pizz." "pizzicato")
-    (:bartok "Bartok" "bartok" "bartók" "bartok pizzicato" "snap pizzicato")
-    (:col-legno "col legno" "col legno" "col-legno")
-    (:espressivo "espressivo" "espressivo")
-    (:sul-pont "sul ponticello" "sul pont" "sul pont." "sul ponticello" "sul-pont")
-    (:sul-tasto "sul tasto" "sul tasto" "sul-tasto")
-    (:non-legato "non-legato" "non-legato" "non legato")
-    (:non-vibrato "senza vibrato" "nonvib" "non vibrato" "non-vibrato" "senza vibrato")
-    (:harmonics "harm." "harm" "harm." "harmonic" "harmonics")))
 
 (defparameter *mscx-expression-notation*
   '((:staccato :tag "Articulation" :subtype "articStaccatoBelow")
@@ -729,10 +682,6 @@ Measure numbers are zero-based and R is a rational whole-note fraction."
     (:accent :tag "Articulation" :subtype "articAccentBelow")
     (:marcato :tag "Articulation" :subtype "articMarcatoAbove")
     (:portato :tag "Articulation" :subtype "articTenutoStaccatoBelow")
-    (:up-bow :tag "Articulation" :subtype "stringsUpBow")
-    (:down-bow :tag "Articulation" :subtype "stringsDownBow")
-    (:harmonics :tag "Articulation" :subtype "stringsHarmonic" :continuation :sustain)
-    (:snap-pizzicato :tag "Articulation" :subtype "pluckedSnapPizzicatoAbove")
     (:fermata :tag "Fermata" :subtype "fermataAbove")
     (:trill :tag "Ornament" :subtype "ornamentTrill")
     (:trill-half :tag "Ornament" :subtype "ornamentTrill" :interval-above "second,minor")
@@ -745,24 +694,60 @@ Measure numbers are zero-based and R is a rational whole-note fraction."
 
 (defun canonical-expression-value (value)
   (case value
-    ((:ordinary :ordinary-technique) :arco)
+    ((:ordinary :ordinary-technique)
+     (if (and *mscx-expression-context*
+              (expression-context-family *mscx-expression-context*))
+         (or (instrument-ordinary-value
+              (expression-context-family *mscx-expression-context*)
+              (expression-context-mapping *mscx-expression-context*)) value)
+       :arco))
     (:pizzicato :pizz)
     (:sul-ponticello :sul-pont)
     ((:nonvib :senza-vibrato) :non-vibrato)
     (otherwise value)))
 
+(defun expression-vocabularies ()
+  "Use the selected instrument; without a family, require global agreement."
+  (if (and *mscx-expression-context*
+           (expression-context-family *mscx-expression-context*))
+      (list (instrument-vocabulary
+             (expression-context-family *mscx-expression-context*)
+             (expression-context-mapping *mscx-expression-context*)))
+    (let ((result nil))
+      (maphash (lambda (id family)
+                 (declare (ignore id))
+                 (dolist (mapping (cons (muse-sounds-family-default-instrument family)
+                                        (muse-sounds-family-instruments family)))
+                   (push (instrument-vocabulary family mapping) result)))
+               *mscx-muse-sounds-families*)
+      result)))
+
+(defun expression-term-field (value key &optional default)
+  "Compare the requested field, independently of playback IDs or evidence."
+  (let ((values nil) (absent (gensym)))
+    (dolist (vocabulary (expression-vocabularies))
+      (let* ((entry (assoc value vocabulary))
+             (field (getf (cdr entry) key absent)))
+        (unless (eq field absent) (pushnew field values :test #'equal))))
+    (if (= (length values) 1) (values (car values) t) (values default nil))))
+
 (defun expression-technique-from-text (text)
   (when (stringp text)
-    (let ((key (normalize-extra-text text)))
-      (car (find-if (lambda (entry)
-                      (member key (cddr entry) :test #'string=))
-                    *mscx-expression-techniques*)))))
+    (let ((key (normalize-extra-text text)) (values nil))
+      (dolist (vocabulary (expression-vocabularies))
+        (dolist (entry vocabulary)
+          (when (member key (getf (cdr entry) :om-text)
+                        :key #'normalize-extra-text :test #'equal)
+            (pushnew (car entry) values))))
+      (when (= (length values) 1) (car values)))))
 
 (defun expression-technique-text (value)
-  (second (assoc (canonical-expression-value value) *mscx-expression-techniques*)))
+  (expression-term-field (canonical-expression-value value) :text))
 
 (defun expression-notation-rule (value)
-  (cdr (assoc (canonical-expression-value value) *mscx-expression-notation*)))
+  (let ((value (canonical-expression-value value)))
+    (expression-term-field value :mscx-notation
+                           (cdr (assoc value *mscx-expression-notation*)))))
 
 (defun expression-placement-key (placement)
   (cond ((member placement '(:staff :chord :note)) placement)
@@ -780,18 +765,16 @@ Specialize on another project's extra class; do not call its old XML exporter.
 OWNER is the note/chord/voice containing EXTRA."))
 
 (defun expand-semantic-expression (expression)
-  "Add harmonic-circle notation separately from a persistent technique."
+  "Add notation declared by the selected vocabulary, separately from playback."
   (let ((value (canonical-expression-value (getf expression :value))))
     (setf (getf expression :value) value)
     (when (and (eq (getf expression :role) :technique) (null value)
                (null (getf expression :raw-node)))
       (setf (getf expression :role) :text))
-    (if (and (eq (getf expression :role) :technique)
-             (eq value :harmonics) (null (getf expression :raw-node)))
-        (list expression
-              (list :role :articulation :value :harmonics :placement :chord
-                    :continuation :sustain))
-      (list expression))))
+    (cons expression
+          (when (and (eq (getf expression :role) :technique)
+                     (null (getf expression :raw-node)))
+            (copy-tree (expression-term-field value :extra-notation))))))
 
 (defmethod extra-expressions ((extra om::mscx-expression-extra) owner)
   (declare (ignore owner))
@@ -808,8 +791,9 @@ OWNER is the note/chord/voice containing EXTRA."))
   (let* ((text (om::thetext extra))
          (technique (expression-technique-from-text text)))
     (expand-semantic-expression
-     (list :role (if technique :technique :text)
-           :value technique :text text :placement :staff))))
+     (list :role (if technique (expression-term-field technique :role :technique) :text)
+           :value technique :text text
+           :placement (if technique (expression-term-field technique :placement :staff) :staff)))))
 
 (defmethod extra-expressions ((extra om::char-extra) owner)
   (declare (ignore owner))
@@ -833,95 +817,47 @@ OWNER is the note/chord/voice containing EXTRA."))
                     :placement :staff))))))
 
 ;;; ----------------------------------------------------------------------
-;;; Explicit playback profiles and one fresh context per exported voice.
+;;; One fresh expression context per exported voice. Mapping data live in
+;;; mscx-instrument-mappings.lisp; this module renders the selected vocabulary.
 ;;; ----------------------------------------------------------------------
 
-(defclass expression-profile ()
-  ((name :initarg :name :reader expression-profile-name)
-   (library :initarg :library :initform nil :reader expression-profile-library)
-   (techniques :initarg :techniques :initform nil :reader expression-profile-techniques)
-   (instruments :initarg :instruments :initform nil :reader expression-profile-instruments)
-   (ordinary :initarg :ordinary :initform nil :reader expression-profile-ordinary)))
-
 (defclass expression-context ()
-  ((profile :initarg :profile :reader expression-context-profile)
+  ((family :initarg :family :reader expression-context-family)
+   (mapping :initarg :mapping :reader expression-context-mapping)
    (instrument :initarg :instrument :initform nil :reader expression-context-instrument)
    (current-technique :initform :unset :accessor expression-context-current-technique)
    (current-notation-technique :initform :unset
                              :accessor expression-context-current-notation-technique)))
 
-(defvar *mscx-expression-profiles* (make-hash-table :test #'eq))
+(defun make-expression-context (&key (instrument-mappings nil mappings-p)
+                                     (profile nil profile-p) instrument)
+  "Fresh state for one voice. PROFILE is the temporary old keyword alias."
+  (let* ((selection (choose-instrument-mappings instrument-mappings mappings-p profile profile-p))
+         (family (resolve-instrument-mappings selection)))
+    (make-instance 'expression-context :family family
+                   :mapping (find-instrument-mapping family instrument)
+                   :instrument instrument)))
 
-(defun register-expression-profile (profile)
-  "Add/replace a profile without changing the score exporter."
-  (check-type profile expression-profile)
-  (setf (gethash (expression-profile-name profile) *mscx-expression-profiles*) profile))
-
-(register-expression-profile
- (make-instance 'expression-profile :name :notation-only))
-
-(register-expression-profile
- (make-instance 'expression-profile :name :muse-strings :library "Muse Strings"
-                :ordinary "ordinary_technique"
-                :instruments '("strings.violin" "strings.viola" "strings.cello"
-                               "violin" "violin solo" "violin 1 solo" "violin-1-solo"
-                               "violin 1 (solo)" "violin (solo)"
-                               "viola" "viola solo" "viola-solo" "viola (solo)"
-                               "cello" "cello solo" "cello-solo" "cello (solo)")
-                ;; IDs copied exactly from div_artikulasjoner.mscz. Auditioned
-                ;; by the user with Violin 1 (Solo); other supported strings
-                ;; require instrument-specific audition, not just valid XML.
-                :techniques '((:arco . "ordinary_technique")
-                              (:pizz . "pizzicato")
-			      (:bartok . "Bartok")
-                              (:col-legno . "Col Legno")
-			      (:espressivo . "Espressivo")
-                              (:sul-pont . "Sul Ponticello")
-			      (:sul-tasto . "Sul Tasto")
-                              (:non-legato . "non-legato")
-			      (:non-vibrato . "nonvib")
-                              (:harmonics . "ordinary_technique"))))
-
-(defun resolve-expression-profile (profile &optional instrument)
-  "Resolve an explicit profile; never infer a library from an instrument name.
-INSTRUMENT is accepted here for API compatibility; the context carries it for
-instrument-dependent specialized EXPRESSION-PLAYBACK methods."
-  (declare (ignore instrument))
-  (cond ((typep profile 'expression-profile) profile)
-        ((null profile) (gethash :notation-only *mscx-expression-profiles*))
-        ((gethash profile *mscx-expression-profiles*))
-        (t (error "Unknown MSCX expression profile ~S." profile))))
-
-(defun make-expression-context (&key profile instrument)
-  (make-instance 'expression-context
-                 :profile (resolve-expression-profile profile instrument)
-                 :instrument instrument))
-
-(defgeneric expression-playback (profile expression context)
+(defgeneric expression-playback (mapping expression context)
   (:documentation "Return playback XML and MAPPED-P, and update CONTEXT.
-Override on profile subclasses for library/instrument-specific mechanisms.
+Specialize on an instrument-mapping subclass for a Muse Sounds mechanism.
 MAPPED-P is true when this method handled the expression's visible text too.
 It is NIL for unsupported intent even if XML resets earlier playback state.
 Never invent an ID: unsupported expressions retain their notation."))
 
-(defun expression-profile-instrument-supported-p (profile context)
-  (let ((instrument (expression-context-instrument context))
-        (supported (expression-profile-instruments profile)))
-    (or (null supported) (null instrument)
-        (and (or (stringp instrument) (symbolp instrument))
-             (member (normalize-extra-text (if (symbolp instrument)
-                                               (symbol-name instrument) instrument))
-                     supported :test #'string=)))))
+(defmethod expression-playback ((mapping t) expression context)
+  (declare (ignore mapping expression context))
+  nil)
 
-(defmethod expression-playback ((profile expression-profile) expression context)
-  (when (and (eq (getf expression :role) :technique)
-             (getf expression :value))
-    (let* ((value (canonical-expression-value (getf expression :value)))
-           (id (and (expression-profile-instrument-supported-p profile context)
-                    (cdr (assoc value (expression-profile-techniques profile)))))
+(defmethod expression-playback ((mapping instrument-mapping) expression context)
+  (when (and (eq (getf expression :role) :technique) (getf expression :value))
+    (let* ((*mscx-expression-context* context)
+           (family (expression-context-family context))
+           (value (canonical-expression-value (getf expression :value)))
+           (id (instrument-playing-technique family mapping value))
            (current (expression-context-current-technique context))
-           (ordinary (and (expression-profile-instrument-supported-p profile context)
-                          (expression-profile-ordinary profile))))
+           (ordinary-value (instrument-ordinary-value family mapping))
+           (ordinary (instrument-playing-technique family mapping ordinary-value)))
       (cond
         (id
          (values
@@ -930,11 +866,13 @@ Never invent an ID: unsupported expressions retain their notation."))
             (staff-text-sound-flag-as-mscx
              (or (getf expression :text) (expression-technique-text value)
                  (string-downcase (princ-to-string value))) id)) t))
-        ;; An unsupported semantic technique must not leave preceding pizzicato
-        ;; etc. playing. Unrelated free text never enters this method.
+        ;; Reset only through this instrument's configured ordinary term.
+        ;; Its visible label may be "open", "ordinary", "arco", etc.
         ((and ordinary (stringp current) (not (string= current ordinary)))
          (setf (expression-context-current-technique context) ordinary)
-         (values (staff-text-sound-flag-as-mscx "arco" ordinary) nil))))))
+         (values (staff-text-sound-flag-as-mscx
+                  (or (getf (instrument-term family mapping ordinary-value) :text)
+                      (string-downcase (princ-to-string ordinary-value))) ordinary) nil))))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Lossless XML payload serializer and conservative reverse descriptions.
@@ -1000,20 +938,32 @@ Returns a one-element list, compatible with the existing exporter XML lists."
                   node (mscx-expression-node-child node "SoundFlag"))))
     (and flag (mscx-expression-child-text flag "playingTechnique"))))
 
-(defun expression-value-from-playing-technique (id &optional profile)
-  "Recognize an ID only if registered profiles give one unambiguous intent.
-HARMONICS uses ordinary solely as a reset; it is not an ID-to-intent mapping."
+(defun expression-value-from-playing-technique (id &optional instrument-mappings)
+  "Recognize an ID only when the selected/registered vocabularies agree.
+Alias entries (:ordinary reset) are not reverse ID-to-intent mappings."
   (when id
     (let ((values nil))
-      (labels ((collect (selected)
-                 (dolist (entry (expression-profile-techniques selected))
-                   (when (and (not (eq (car entry) :harmonics))
-                              (string= id (cdr entry)))
-                     (pushnew (canonical-expression-value (car entry)) values)))))
-        (if profile (collect (resolve-expression-profile profile))
-          (maphash (lambda (name selected) (declare (ignore name)) (collect selected))
-                   *mscx-expression-profiles*)))
+      (labels ((collect-family (family)
+                 (dolist (mapping (cons (muse-sounds-family-default-instrument family)
+                                        (muse-sounds-family-instruments family)))
+                   (dolist (entry (instrument-vocabulary family mapping))
+                     (let ((configured (getf (cdr entry) :playing-technique)))
+                       (when (and (stringp configured) (string= id configured))
+                         (pushnew (car entry) values)))))))
+        (if instrument-mappings
+            (let ((family (resolve-instrument-mappings instrument-mappings)))
+              (when family (collect-family family)))
+          (maphash (lambda (name family) (declare (ignore name)) (collect-family family))
+                   *mscx-muse-sounds-families*)))
       (when (= (length values) 1) (car values)))))
+
+(defun expression-notation-entries ()
+  "Common grammar and configured instrument notation, for conservative import."
+  (let ((result (copy-tree *mscx-expression-notation*)))
+    (dolist (vocabulary (expression-vocabularies) result)
+      (dolist (entry vocabulary)
+        (let ((rule (getf (cdr entry) :mscx-notation)))
+          (when rule (pushnew (cons (car entry) rule) result :test #'equal)))))))
 
 (defun expression-subtype-without-orientation (subtype)
   (let ((length (length subtype)))
@@ -1023,7 +973,7 @@ HARMONICS uses ordinary solely as a reset; it is not an ID-to-intent mapping."
            (subseq subtype 0 (- length 5)))
           (t subtype))))
 
-(defun expression-node-description (node placement &optional profile)
+(defun expression-node-description (node placement &optional instrument-mappings)
   "Describe only unambiguous notation/IDs; always retain the original XML.
 Unknown or richer data stays raw. No reverse guess of an OM char/font code."
   (let* ((name (mscx-expression-node-name node))
@@ -1031,7 +981,7 @@ Unknown or richer data stays raw. No reverse guess of an OM char/font code."
          (subtype (mscx-expression-child-text node "subtype"))
          (interval (mscx-expression-child-text node "intervalAbove"))
          (id (expression-playing-technique node))
-         (technique (expression-value-from-playing-technique id profile))
+         (technique (expression-value-from-playing-technique id instrument-mappings))
          (notation (and subtype
                         (find-if
                          (lambda (entry)
@@ -1044,7 +994,7 @@ Unknown or richer data stays raw. No reverse guess of an OM char/font code."
                                                    (getf (cdr entry) :subtype))
                                                   (expression-subtype-without-orientation subtype))))
                                 (equal (getf (cdr entry) :interval-above) interval)))
-                         *mscx-expression-notation*))))
+                         (expression-notation-entries)))))
     (cond
       (technique
        (list :role :technique :value technique :text (or text (expression-technique-text technique))
@@ -1125,7 +1075,8 @@ Only local attack signs/ornaments default to attack-only."
 
 (defun expression-as-mscx (expression placement context &key continuation-p)
   "Render one descriptor; used also for imported voice-owned timed expressions."
-  (let* ((placement (expression-placement-key placement))
+  (let* ((*mscx-expression-context* context)
+         (placement (expression-placement-key placement))
          (raw (getf expression :raw-node))
          (role (expression-role expression))
          (value (canonical-expression-value (getf expression :value)))
@@ -1148,7 +1099,7 @@ Only local attack signs/ornaments default to attack-only."
          (unless (equal value (expression-context-current-notation-technique context))
            (setf (expression-context-current-notation-technique context) value)
            (multiple-value-bind (playback mapped-p)
-               (expression-playback (expression-context-profile context) expression context)
+               (expression-playback (expression-context-mapping context) expression context)
              (if mapped-p
                  ;; A harmonic technique has the same ordinary playback ID;
                  ;; still emit its new notation when no SoundFlag is needed.
@@ -1206,7 +1157,8 @@ Invoke each adapter with its actual note owner; raw note XML stays note-local."
   "Export all relevant extras for one owner/placement with per-call dedup.
 On tied continuations, ATTACK-OWNER supplies only sustaining notation.
 The caller creates a fresh context per part for every export."
-  (let* ((placement (expression-placement-key placement))
+  (let* ((*mscx-expression-context* context)
+         (placement (expression-placement-key placement))
          (own (if (eq placement :note) (owner-expression-descriptions owner)
                 (chord-expression-descriptions owner)))
          (inherited (when (and continuation-p attack-owner (not (eq owner attack-owner)))

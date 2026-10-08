@@ -744,7 +744,7 @@ Only basic chord/note content is preserved."
        (list "</Chord>")))))
 
 ;;; Expression state belongs to one export/voice. It is never retained on
-;;; source objects or in a shared mutable profile.
+;;; source objects or in a shared instrument mapping.
 (defvar *mscx-expression-context* nil)
 (defvar *mscx-expression-voice* nil)
 (defvar *mscx-expression-pending* nil)
@@ -858,7 +858,7 @@ Any remaining record makes export fail explicitly instead of dropping XML."
        (call-next-method)))
     ((or (typep self 'om::chord) (typep self 'om::rest))
      (let ((*mscx-expression-context*
-             (or *mscx-expression-context* (make-expression-context :profile :notation-only))))
+             (or *mscx-expression-context* (make-expression-context :instrument-mappings :notation-only))))
        (prog1 (append (mscx-anchored-staff-as-mscx *mscx-expression-cursor*)
                       (call-next-method))
          (incf *mscx-expression-cursor*
@@ -1370,12 +1370,14 @@ No rounding: a remainder below the supported note values raises an error."
 			     free
 			     (clef '(G 2)) (notation-scale :from-object)
 			     part
-                             (expression-profiles :notation-only) instruments
+                             (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments
 			     (velocities-as-dynamics *mscx-export-velocities-as-dynamics*))
 
   (let ((voicenum part)
         (measures (om::inside self)))
-    (let ((*mscx-expression-context* (make-expression-context :profile expression-profiles :instrument instruments))
+    (let ((*mscx-expression-context* (make-expression-context
+             :instrument-mappings (choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p)
+             :instrument instruments))
           (*mscx-expression-voice* self)
           (*mscx-expression-pending* (mscx-voice-anchored-expressions self))
           (*mscx-current-approx* (mscx-effective-export-approx self notation-scale))
@@ -1405,8 +1407,9 @@ No rounding: a remainder below the supported note values raises an error."
         content))))
 
 
-(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part (expression-profiles :notation-only) instruments)
-  (let* ((voices (om::inside self))
+(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
+  (let* ((selected-mappings (choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p))
+         (voices (om::inside self))
          (*mscx-export-measure-plan* (mscx-build-export-measure-plan voices)))
     (unless (or (= (length clef) 1) (= (length clef) (length voices)))
       (error "MSCX export: supply one clef for all voices, or one per voice (~D); got ~D."
@@ -1438,7 +1441,7 @@ No rounding: a remainder below the supported note values raises an error."
                for i = 1 then (+ i 1)
                append
 	       (cons-mscx-expr v :part i :clef (car clef)  :notation-scale notation-scale
-                               :expression-profiles (mscx-per-voice-option expression-profiles i (length voices) :profile)
+                               :instrument-mappings (mscx-per-voice-option selected-mappings i (length voices) :mappings)
                                :instruments (mscx-per-voice-option instruments i (length voices) :instrument)))
 	 ;; one clef per voice
 	 (loop for v in voices
@@ -1446,7 +1449,7 @@ No rounding: a remainder below the supported note values raises an error."
                for k in clef
                append
 	       (cons-mscx-expr v :part i :clef k  :notation-scale notation-scale
-                               :expression-profiles (mscx-per-voice-option expression-profiles i (length voices) :profile)
+                               :instrument-mappings (mscx-per-voice-option selected-mappings i (length voices) :mappings)
                                :instruments (mscx-per-voice-option instruments i (length voices) :instrument))))
 
      "</Score>"
@@ -1498,17 +1501,17 @@ use only the first clef letter."
     (loop for line in (mscx::mscx-header) do (format out "~A~%" line))
     (recursive-write-xml out list -1)))
 
-(defmethod mscx-export ((self t) &key clefs notation-scale path name expression-profiles instruments) nil)
+(defmethod mscx-export ((self t) &key clefs notation-scale path name instrument-mappings expression-profiles instruments) nil)
 
-(defmethod mscx-export ((self voice) &key clefs (notation-scale :from-object) path name (expression-profiles :notation-only) instruments)
+(defmethod mscx-export ((self voice) &key clefs (notation-scale :from-object) path name (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
   (mscx-export (make-instance 'poly :voices self)
                :clefs clefs
                :notation-scale notation-scale
-               :expression-profiles expression-profiles :instruments instruments
+               :instrument-mappings (mscx::choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p) :instruments instruments
                :path path
                :name name))
 
-(defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name (expression-profiles :notation-only) instruments)
+(defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
   (let* ((pathname (or path
                        (om-choose-new-file-dialog
                         :name (or name "om-export.mscx")
@@ -1518,7 +1521,7 @@ use only the first clef letter."
          (content (mscx::cons-mscx-expr self
                                         :clef (or clefs '((G 2)))
                                         :notation-scale notation-scale
-                                        :expression-profiles expression-profiles :instruments instruments)))
+                                        :instrument-mappings (mscx::choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p) :instruments instruments)))
     (when pathname
       (write-mscx-file content pathname)
       pathname)))
@@ -1578,18 +1581,18 @@ Microtonal notation policy:
 (defmethod! export-mscx-expression ((self t)
                                    &optional (clefs '((G 2)))
                                    (notation-scale :from-object) (path nil)
-                                   (expression-profiles :notation-only) (instruments nil))
+                                   (instrument-mappings :notation-only) (instruments nil))
   :icon 351
   :indoc '("VOICE or POLY"
            "one clef for all voices, or one per voice"
            "notation scale: :from-object or an OM approx value"
            "target pathname"
-           "profile or one profile per voice: e.g: :notation-only / :muse-strings"
+           "instrument mappings or one family per voice: :notation-only / :muse-strings"
            "optional instrument identity or one identity per voice")
   :initvals '(nil ((G 2)) :from-object nil :notation-only nil)
-  :doc "Export MSCX with explicit notation/playback profiles. Profiles select
-expression encoding; select the matching sound library separately in MuseScore.
+  :doc "Export MSCX using a Muse Sounds instrument vocabulary/mapping family.
+Choose the actual sound separately in MuseScore; these inputs select mappings.
 This separate box can be loaded into a session containing the older EXPORT-MSCX
 box without changing that generic function's optional-input arity."
   (mscx-export self :clefs clefs :notation-scale notation-scale :path path
-                    :expression-profiles expression-profiles :instruments instruments))
+                    :instrument-mappings instrument-mappings :instruments instruments))
