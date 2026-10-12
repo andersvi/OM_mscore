@@ -653,6 +653,7 @@ tuplet-stack information, and BeamMode."
         ((string= type "G8vb") 'om::g_8)
         ((string= type "G8va") 'om::g^8)
         ((string= type "F") 'om::f)
+        ((string= type "F8va") 'om::f^8)
         ((string= type "F8vb") 'om::f_8)
         ((string= type "C1") 'om::c1)
         ((string= type "C3") 'om::c3)

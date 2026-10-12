@@ -461,22 +461,41 @@ from that voice/poly/chord-seq/chord."
 
 ;; CLEFS
 
-(defun clef-sign->mscx-clef (sign &optional line)
-  (unless (or (symbolp sign) (stringp sign) (characterp sign))
+(defun clef-sign->mscx-clef (sign)
+  "Map a clef symbol or string to its MSCX name, ignoring letter case.
+Supported names: G, G^8, G_8, C1, C3, C4, F, F^8, F_8, EMPTY.
+C-clef names include the staff line; no separate LINE argument is used."
+  (unless (or (symbolp sign) (stringp sign))
     (error "Invalid clef sign: ~S" sign))
-  (cond
-    ((and (string= sign :c) (= line 1)) "C1")
-    ((and (string= sign :c) (= line 3)) "C3")
-    ((and (string= sign :c) (= line 4)) "C4")
-    ((string= sign :g) "G")
-    ((string= sign :g_8) "G8vb")
-    ((string= sign :g^8) "G8va")
-    ((string= sign :f) "F")
-    ((string= sign :f_8) "F8va")
-    ((string= sign :empty) "PERC")
-    (t
-     (error "Unsupported OM clef for MSCX export: ~S~@[ line ~A~]"
-            sign line))))
+  (or (cdr (assoc (string-upcase (string sign))
+                  '(("G" . "G")
+		    ("G^8" . "G8va")
+		    ("G_8" . "G8vb")
+                    ("C1" . "C1")
+		    ("C3" . "C3")
+		    ("C4" . "C4")
+                    ("F" . "F")
+		    ("F^8" . "F8va")
+		    ("F_8" . "F8vb")
+                    ("EMPTY" . "PERC"))
+                  :test #'string=))
+      (error "Unsupported OM clef for MSCX export: ~S. Use G, G^8, G_8, C1, C3, C4, F, F^8, F_8 or EMPTY."
+             sign)))
+
+(defun mscx-validate-clefs (clefs voice-count)
+  "Require a flat, nonempty list: one clef for all voices or one per voice."
+  (unless (and (consp clefs)
+               (handler-case (list-length clefs)
+                 (type-error () nil)))
+    (let ((*print-circle* t))
+      (error "MSCX export: CLEFS must be a flat, nonempty list of symbols or strings, e.g. (:G :C3 :F); got ~S."
+             clefs)))
+  (unless (or (= (length clefs) 1) (= (length clefs) voice-count))
+    (error "MSCX export: supply one clef for all voices, or one per voice (~D); got ~D."
+           voice-count (length clefs)))
+  (dolist (clef clefs)
+    (clef-sign->mscx-clef clef))
+  clefs)
 
 
 ;;;
@@ -1290,7 +1309,7 @@ No rounding: a remainder below the supported note values raises an error."
 (defun mscx-measure-header (signature first-measure-p timesig-p clef)
   (append
    (when (and first-measure-p clef)
-     (let ((name (clef-sign->mscx-clef (car clef) (cadr clef))))
+     (let ((name (clef-sign->mscx-clef clef)))
        (list "<Clef>" "<isHeader>1</isHeader>"
              (format nil "<concertClefType>~A</concertClefType>" name)
              (format nil "<transposingClefType>~A</transposingClefType>" name)
@@ -1315,7 +1334,7 @@ No rounding: a remainder below the supported note values raises an error."
               (not (same-signature-p measure prev)))))))
 
 
-(defmethod cons-mscx-expr ((self om::measure) &key free (clef '(G 2)) (notation-scale :from-object) part)
+(defmethod cons-mscx-expr ((self om::measure) &key free (clef :g) (notation-scale :from-object) part)
   (let* ((mesnum free)
          (inside (om::inside self))
          (signature (or (nth (1- mesnum) *mscx-export-measure-plan*)
@@ -1368,7 +1387,7 @@ No rounding: a remainder below the supported note values raises an error."
 (defmethod cons-mscx-expr ((self om::voice)
 			   &key
 			     free
-			     (clef '(G 2)) (notation-scale :from-object)
+			     (clef :g) (notation-scale :from-object)
 			     part
                              (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments
 			     (velocities-as-dynamics *mscx-export-velocities-as-dynamics*))
@@ -1407,13 +1426,11 @@ No rounding: a remainder below the supported note values raises an error."
         content))))
 
 
-(defmethod cons-mscx-expr ((self om::poly) &key free (clef '((G 2))) (notation-scale :from-object) part (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
+(defmethod cons-mscx-expr ((self om::poly) &key free (clef '(:g)) (notation-scale :from-object) part (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
   (let* ((selected-mappings (choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p))
          (voices (om::inside self))
          (*mscx-export-measure-plan* (mscx-build-export-measure-plan voices)))
-    (unless (or (= (length clef) 1) (= (length clef) (length voices)))
-      (error "MSCX export: supply one clef for all voices, or one per voice (~D); got ~D."
-             (length voices) (length clef)))
+    (mscx-validate-clefs clef (length voices))
     (list
      "<museScore version=\"4.60\">"
      "<Score>"
@@ -1466,34 +1483,28 @@ No rounding: a remainder below the supported note values raises an error."
 (in-package :om)
 
 (defun om-staff-symbol->mscx-clef (staff)
-  "Map OM editor staff symbol to legacy clef form (SIGN LINE)
+  "Map an OM editor staff symbol or string to a clef keyword
 for simple one-staff MSCX export.
 
 If STAFF is a multi-staff display symbol like GF, GGF, FF, etc.,
 use only the first clef letter."
   (let ((name (string-upcase (string staff))))
     (cond
-      ;; explicit simple clefs
-      ((string= name "G") '(g 2))
-      ((string= name "G_8") '(g_8 2))
-      ((string= name "G^8") '(g^8 2))
-      ((string= name "F") '(f 4))
-      ((string= name "F_8") '(f_8 4))
-      ((string= name "C1") '(c 1))
-      ((string= name "C3") '(c 3))
-      ((string= name "C4") '(c 4))
-      ((string= name "EMPTY") '(empty 0))
-
       ;; multi-staff display symbols -> first staff only
-      ((string= name "GF") '(g 2))
-      ((string= name "GG") '(g 2))
-      ((string= name "FF") '(f 4))
-      ((string= name "GGF") '(g 2))
-      ((string= name "GFF") '(g 2))
-      ((string= name "GGFF") '(g 2))
+      ((member name '("GF" "GG" "GGF" "GFF" "GGFF") :test #'string=) :g)
+      ((string= name "FF") :f)
 
       (t
-       (error "Unsupported OM staff symbol for MSCX export: ~S" staff)))))
+       (mscx::clef-sign->mscx-clef staff)
+       (intern name :keyword)))))
+
+(defun mscx-editor-clefs (self)
+  "Return a flat clef list from the OM editor, defaulting to (:G)."
+  (let* ((box (associated-box self))
+         (staff (and box (get-edit-param box 'staff))))
+    (cond ((null staff) '(:g))
+          ((listp staff) (mapcar #'om-staff-symbol->mscx-clef staff))
+          (t (list (om-staff-symbol->mscx-clef staff))))))
 
 (defun write-mscx-file (list path)
   (with-open-file (out path :direction :output
@@ -1512,6 +1523,9 @@ use only the first clef letter."
                :name name))
 
 (defmethod mscx-export ((self poly) &key clefs (notation-scale :from-object) path name (instrument-mappings nil mappings-p) (expression-profiles nil profiles-p) instruments)
+  "Export a POLY using a flat CLEFS list of symbols or strings.
+One entry applies to every voice; otherwise supply one entry per voice.
+Omitted or NIL CLEFS defaults to (:G)."
   (let* ((pathname (or path
                        (om-choose-new-file-dialog
                         :name (or name "om-export.mscx")
@@ -1519,7 +1533,7 @@ use only the first clef letter."
                                        nil)
                         :prompt "Export MuseScore MSCX")))
          (content (mscx::cons-mscx-expr self
-                                        :clef (or clefs '((G 2)))
+                                        :clef (or clefs '(:g))
                                         :notation-scale notation-scale
                                         :instrument-mappings (mscx::choose-instrument-mappings instrument-mappings mappings-p expression-profiles profiles-p) :instruments instruments)))
     (when pathname
@@ -1529,12 +1543,16 @@ use only the first clef letter."
 (defmethod! export-mscx ((self t) &optional (clefs nil) (notation-scale :from-object) (path nil))
   :icon 351
   :indoc '("a VOICE or POLY object"
-           "list of voice clefs"
+           "flat clef list, e.g. (:g :c3 :f); nil uses editor clefs"
            "notation scale: :from-object or OM approx value, e.g. 4, 480.0, 960.0"
            "a target pathname")
-  :initvals '(nil '((G 2)) :from-object nil)
+  :initvals '(nil nil :from-object nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
+
+Clefs: a flat list of symbols or strings, e.g. (:g :c3 :f) or (\"G\" \"C3\" \"F\").
+One entry applies to all voices; otherwise supply one per voice.
+NIL uses editor clefs, falling back to (:g).
 
 Microtonal notation policy:
 - default notation-scale is :from-object
@@ -1542,24 +1560,23 @@ Microtonal notation policy:
 - a numeric notation-scale forces that OM approx during export
 - raw midic values are rounded to the active OM scale before notation export
 "
-  (let* ((staff (get-edit-param (associated-box self) 'staff))
-         (clefs (cond ((null staff) '((G 2)))
-                      ((listp staff) (loop for i in staff collect (om-staff-symbol->mscx-clef i)))
-                      (t (list (om-staff-symbol->mscx-clef staff))))))
-    (mscx-export self
-                 :clefs (if clefs clefs '((G 2)))
-                 :notation-scale notation-scale
-                 :path path)))
+  (mscx-export self
+               :clefs (or clefs (mscx-editor-clefs self))
+               :notation-scale notation-scale
+               :path path))
 
 (defmethod! export-mscx ((self voice) &optional (clefs nil) (notation-scale :from-object) (path nil))
   :icon 351
   :indoc '("a VOICE object"
-           "voice clef override"
+           "flat clef list with one entry, e.g. (:g_8); nil uses editor clef"
            "notation scale: :from-object, or valid OM approx value, e.g. 4, 480.0, 960.0"
            "a target pathname")
-  :initvals '(nil ((G 2)) :from-object nil)
+  :initvals '(nil nil :from-object nil)
   :doc "
 Exports <self> to MuseScore MSCX format.
+
+Clefs: a one-entry list of symbols or strings, e.g. (:g_8) or (\"G_8\").
+NIL uses the editor clef, falling back to (:g).
 
 Microtonal notation policy:
 - default notation-scale is :from-object
@@ -1567,29 +1584,27 @@ Microtonal notation policy:
 - a numeric notation-scale forces that OM approx during export
 - raw midic values are rounded to the active OM scale before notation export
 "
-  (let* ((staff (get-edit-param (associated-box self) 'staff))
-         (clefs (list (om-staff-symbol->mscx-clef staff))))
-    (mscx-export self
-                 :clefs (if clefs clefs '((G 2)))
-                 :notation-scale notation-scale
-                 :path path)))
+  (mscx-export self
+               :clefs (or clefs (mscx-editor-clefs self))
+               :notation-scale notation-scale
+               :path path))
 
-(defmethod! export-mscx ((self poly) &optional (clefs '((G 2))) (notation-scale :from-object) (path nil))
+(defmethod! export-mscx ((self poly) &optional (clefs nil) (notation-scale :from-object) (path nil))
   (call-next-method))
 
 
 (defmethod! export-mscx-expression ((self t)
-                                   &optional (clefs '((G 2)))
+                                   &optional (clefs '(:g))
                                    (notation-scale :from-object) (path nil)
                                    (instrument-mappings :notation-only) (instruments nil))
   :icon 351
   :indoc '("VOICE or POLY"
-           "one clef for all voices, or one per voice"
+           "flat clef list: one for all voices, or one per voice, e.g. (:g :c3 :f)"
            "notation scale: :from-object or an OM approx value"
            "target pathname"
            "instrument mappings or one family per voice: :notation-only / :muse-strings"
            "optional instrument identity or one identity per voice")
-  :initvals '(nil ((G 2)) :from-object nil :notation-only nil)
+  :initvals '(nil (:g) :from-object nil :notation-only nil)
   :doc "Export MSCX using a Muse Sounds instrument vocabulary/mapping family.
 Choose the actual sound separately in MuseScore; these inputs select mappings.
 This separate box can be loaded into a session containing the older EXPORT-MSCX
