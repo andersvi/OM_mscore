@@ -20,7 +20,7 @@
 ;;; 
 ;;; based on: Violin 1 (Solo).
 ;;; 
-;;; Viola/cello not comprehensive, only inherit the prototype (violin)
+;;; Viola/cello not comprehensive, inheritting for now from the prototype (violin)
 ;;;
 
 ;;; Vocabulary is an association list: (TERM . PROPERTY-LIST).
@@ -66,7 +66,47 @@
     (:snap-pizzicato :text "snap pizzicato"
                      :mscx-notation (:tag "Articulation" :subtype "pluckedSnapPizzicatoAbove"))))
 
+;; 
+;; Violin 1 Solo palette picked from notation example
+;; 
+
+(defparameter *muse-strings-violin-1-solo-vocabulary*
+  '((:arco        :role :technique :placement :staff)
+    (:pizz        :role :technique :placement :staff)
+    (:bartok      :role :technique :placement :staff)
+    (:col-legno   :role :technique :placement :staff)
+    (:espressivo  :role :technique :placement :staff)
+    (:sul-pont    :role :technique :placement :staff)
+    (:sul-tasto   :role :technique :placement :staff)
+    (:non-legato  :role :technique :placement :staff)
+    (:non-vibrato :role :technique :placement :staff)
+    (:harmonics   :role :technique :placement :staff)
+
+    (:staccato              :role :articulation :placement :chord)
+    (:staccatissimo         :role :articulation :placement :chord)
+    (:tenuto                :role :articulation :placement :chord)
+    (:accent                :role :articulation :placement :chord)
+    (:marcato               :role :articulation :placement :chord)
+    (:portato               :role :articulation :placement :chord)
+    (:accent-staccato       :role :articulation :placement :chord)
+    (:marcato-staccato      :role :articulation :placement :chord)
+    (:marcato-tenuto        :role :articulation :placement :chord)
+    (:staccatissimo-stroke  :role :articulation :placement :chord)
+    (:staccatissimo-wedge   :role :articulation :placement :chord)
+    (:stress                :role :articulation :placement :chord)
+    (:unstress              :role :articulation :placement :chord)
+    (:up-bow                :role :articulation :placement :chord)
+    (:down-bow              :role :articulation :placement :chord)
+    (:snap-pizzicato        :role :articulation :placement :chord))
+  "Declared Violin 1 Solo palette from the supplied notation example.
+Technique playback IDs and extra notation are inherited from the family.
+Local notation uses the common semantic notation grammar.
+Declaration does not independently verify the audible effect of every sign.")
+
+
 ;;;   one record per solo instrument.
+
+
 
 (register-muse-sounds-family
  (make-instance 'muse-sounds-family
@@ -79,6 +119,7 @@
       :om-names '("violin" "violin solo" "violin 1 solo" "violin-1-solo" "violin (solo)")
       :musescore-id "violin" :musicxml-id "strings.violin"
       :muse-sound-name "Violin 1 (Solo)"
+      :vocabulary *muse-strings-violin-1-solo-vocabulary*      
       :evidence '(:xml "div_artikulasjoner.mscz" :audition :user-violin-1-solo))
     (make-instance 'instrument-mapping
       :id :viola-solo :name "Viola Solo"

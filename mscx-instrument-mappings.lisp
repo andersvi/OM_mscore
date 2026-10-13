@@ -27,7 +27,8 @@
            #:instrument-mapping-musescore-id #:instrument-mapping-musicxml-id
            #:instrument-mapping-muse-sound-name #:instrument-mapping-vocabulary
            #:instrument-mapping-ordinary #:instrument-mapping-evidence
-           #:extra-expressions #:expression-playback #:expression-context #:expand-semantic-expression 
+           #:instrument-expression-values
+	   #:extra-expressions #:expression-playback #:expression-context #:expand-semantic-expression 
            #:make-expression-context #:expression-extras-as-mscx
            #:expression-as-mscx #:expression-node-description
            #:mscx-expression-node-as-xml
@@ -184,6 +185,23 @@ This selects mappings; it does not select a sound in the MuseScore mixer."
                                  (member key (instrument-mapping-names mapping)
                                          :key #'instrument-name-key :test #'equal))
                                (muse-sounds-family-instruments family)))))))))
+
+(defun instrument-expression-values (family instrument &optional role)
+  "Return explicitly classified expression keys for FAMILY and INSTRUMENT.
+ROLE optionally selects a semantic role, e.g. :TECHNIQUE or :ARTICULATION.
+Terms without an explicit :ROLE are omitted; no availability is inferred.
+An empty result means no matching palette has been declared."
+  (let* ((family (resolve-instrument-mappings family))
+         (mapping (find-instrument-mapping family instrument)))
+    (when (and family instrument (null mapping))
+      (error "MSCX: unknown instrument ~S in family ~S."
+             instrument (muse-sounds-family-id family)))
+    (loop for (value . properties) in
+				   (instrument-vocabulary family mapping)
+          for declared-role = (getf properties :role)
+          when (and declared-role
+                    (or (null role) (eq role declared-role)))
+            collect value)))
 
 (defun choose-instrument-mappings (selection selection-p legacy legacy-p)
   "Temporary keyword bridge; new code uses :instrument-mappings."
