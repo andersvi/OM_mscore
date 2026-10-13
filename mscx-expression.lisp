@@ -756,16 +756,25 @@ Specialize on another project's extra class; do not call its old XML exporter.
 OWNER is the note/chord/voice containing EXTRA."))
 
 (defun expand-semantic-expression (expression)
-  "Add notation declared by the selected vocabulary, separately from playback."
-  (let ((value (canonical-expression-value (getf expression :value))))
+  "Return expression descriptors, including vocabulary-defined extra notation.
+Use the current export context's instrument vocabulary.
+Do not modify the supplied plist; explicit :TEXT retains its value."
+  (let* ((expression (copy-list expression))
+         (value
+           (if (eq (getf expression :role) :text)
+               (getf expression :value)
+               (canonical-expression-value
+		(getf expression :value)))))
     (setf (getf expression :value) value)
-    (when (and (eq (getf expression :role) :technique) (null value)
+    (when (and (eq (getf expression :role) :technique)
+               (null value)
                (null (getf expression :raw-node)))
       (setf (getf expression :role) :text))
     (cons expression
           (when (and (eq (getf expression :role) :technique)
                      (null (getf expression :raw-node)))
-            (copy-tree (expression-term-field value :extra-notation))))))
+            (copy-tree
+             (expression-term-field value :extra-notation))))))
 
 (defmethod extra-expressions ((extra om::mscx-expression-extra) owner)
   (declare (ignore owner))
@@ -1027,11 +1036,16 @@ Unknown or richer data stays raw. No reverse guess of an OM char/font code."
         :text role)))
 
 (defun expression-local-rule (expression)
-  (if (getf expression :tag)
-      (list :tag (getf expression :tag) :subtype (getf expression :subtype)
-            :interval-above (getf expression :interval-above)
-            :continuation (getf expression :continuation))
-    (expression-notation-rule (getf expression :value))))
+  "Return local notation for semantic intent.
+Explicit :TEXT never acquires an articulation rule from its value."
+  (unless (eq (expression-role expression) :text)
+    (if (getf expression :tag)
+        (list :tag (getf expression :tag)
+              :subtype (getf expression :subtype)
+              :interval-above (getf expression :interval-above)
+              :continuation (getf expression :continuation))
+      (expression-notation-rule
+       (getf expression :value)))))
 
 (defun expression-sustains-p (expression)
   (or (eq (getf expression :continuation) :sustain)

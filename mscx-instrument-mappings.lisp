@@ -27,7 +27,7 @@
            #:instrument-mapping-musescore-id #:instrument-mapping-musicxml-id
            #:instrument-mapping-muse-sound-name #:instrument-mapping-vocabulary
            #:instrument-mapping-ordinary #:instrument-mapping-evidence
-           #:extra-expressions #:expression-playback #:expression-context
+           #:extra-expressions #:expression-playback #:expression-context #:expand-semantic-expression 
            #:make-expression-context #:expression-extras-as-mscx
            #:expression-as-mscx #:expression-node-description
            #:mscx-expression-node-as-xml
