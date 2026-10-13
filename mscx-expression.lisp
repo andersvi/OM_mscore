@@ -144,13 +144,15 @@ Explicit CONTEXT selects playback. Without it, use notation only."
 ;; 
 ;; velocity, and vel-extras set per note in OMs editors
 ;;
-;;
 ;; uses OMs various vel lookups etc in editor/scoreeditor/scoretools.lisp
 ;; 
 ;; trying to support OMs - per-note dynamics (vel-extra)
 ;; 
-(defparameter *mscx-dynamics-size* "0.6")
-(defparameter *mscx-dynamics-direction* "up")
+;; (defparameter *mscx-dynamics-size* "0.6")
+;; (defparameter *mscx-dynamics-direction* "up")
+
+(defparameter *mscx-dynamics-size* nil)			    ;0->1.0 / nil
+(defparameter *mscx-dynamics-direction* nil)		    ;"up" / "down" / nil
 
 ;; mapping used by mscore
 
@@ -229,19 +231,13 @@ Explicit CONTEXT selects playback. Without it, use notation only."
         (dynamic-as-mscx dyn)))))
 
 
-
-
 (defun dynamic-as-mscx (dyn)
-  (list "<Dynamic>"
-        (format nil "<subtype>~A</subtype>"
-                (dynamic-symbol->mscx-subtype dyn))
-        (format nil "<velocity>~D</velocity>"
-                (dynamic-symbol->mscx-velocity dyn))
-        (format nil "<dynamicsSize>~A</dynamicsSize>"
-                *mscx-dynamics-size*)
-        (format nil "<direction>~A</direction>"
-                *mscx-dynamics-direction*)
-        "</Dynamic>"))
+  (x-append "<Dynamic>"
+          (format nil "<subtype>~A</subtype>" (dynamic-symbol->mscx-subtype dyn))
+          (format nil "<velocity>~D</velocity>" (dynamic-symbol->mscx-velocity dyn))
+          (if *mscx-dynamics-size* (format nil "<dynamicsSize>~A</dynamicsSize>" *mscx-dynamics-size*))
+          (if *mscx-dynamics-direction* (format nil "<direction>~A</direction>" *mscx-dynamics-direction*))
+          "</Dynamic>"))
 
 (defun vel-extra-as-mscx (chord)
   (let ((dyn (chord-dynamic-symbol chord)))
